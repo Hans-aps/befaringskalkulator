@@ -158,6 +158,8 @@
   .sum-group-meta { font-size: 12px; color: var(--text-muted); }
   .sum-del { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
   .sum-del:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .sum-edit { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 13px; color: var(--blue); cursor: pointer; }
+  .sum-edit:hover { background: var(--blue-light); border-color: var(--blue); }
   .sum-rows { padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; }
   .sum-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; border-bottom: 1px solid var(--border); }
   .sum-row:last-child { border-bottom: none; }
@@ -827,7 +829,10 @@ function renderSummary() {
     return `<div class="sum-group">
       <div class="sum-group-hdr">
         <div><div class="sum-group-name">${key}${antall}</div><div class="sum-group-meta">${agg.m2} m²</div></div>
-        <button class="sum-del" onclick="deleteGroup('${safeKey}')">Slett</button>
+        <div style="display:flex;gap:6px">
+          <button class="sum-edit" onclick="redigerRom('${safeKey}')">Rediger</button>
+          <button class="sum-del" onclick="deleteGroup('${safeKey}')">Slett</button>
+        </div>
       </div>
       <div class="sum-rows">${rows.map(([k,v])=>`<div class="sum-row"><span class="sum-key">${k}</span><span class="sum-val">${v}</span></div>`).join("")}</div>
     </div>`;
@@ -865,6 +870,42 @@ function exportExcel() {
   a.href = url; a.download = projNavn.replace(/[^a-zA-Z0-9æøåÆØÅ _-]/g,"_") + ".csv";
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+async function redigerRom(navn) {
+  const entries = state.rooms.filter(r => r.navn === navn);
+  if (!entries.length) return;
+  if (entries.length > 1 && !confirm(`Det er ${entries.length} like rom med navn "${navn}". Rediger fjerner én og lar deg endre den.`)) return;
+
+  const rom = entries[entries.length - 1];
+  const rmIdx = state.rooms.map((r,i) => r === rom ? i : -1).filter(i => i >= 0).pop();
+  state.rooms.splice(rmIdx, 1);
+  if (rom._id) try { await deleteRoomsFromFirebase([rom._id]); } catch(e) {}
+  renderSummary();
+
+  // Sett romtype og navn
+  selectRoom(rom.romtype);
+  document.getElementById("romNavn").value = rom.navn;
+  document.getElementById("sqm").value = rom.m2 || 0;
+  if (document.getElementById("kursInput")) document.getElementById("kursInput").value = rom.kurser || 0;
+
+  // TV/seksveisstikk
+  const tvCb = document.getElementById("cb-tv");
+  if (tvCb) tvCb.checked = !!rom.seksveisstikk;
+
+  // Avkrysningsbokser og verdier
+  const feats = {data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,royk:rom.royk,komfyrvakt:rom.komfyrvakt};
+  Object.entries(feats).forEach(([id, v]) => {
+    const cb = document.getElementById("cb-"+id);
+    const body = document.getElementById("body-"+id);
+    const valEl = document.getElementById("val-"+id);
+    if (cb) { cb.checked = v > 0; if (body) body.classList.toggle("open", v > 0); }
+    if (valEl && v > 0) valEl.value = v;
+  });
+
+  update();
+  document.getElementById("calcContent")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  showToast(`Redigerer: ${rom.navn}`);
 }
 
 async function deleteGroup(navn) {
