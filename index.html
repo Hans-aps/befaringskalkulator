@@ -51,7 +51,7 @@
   .proj-del-btn:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
   .sidebar-new-btn { background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 11px; font-weight: 600; padding: 3px 9px; cursor: pointer; }
   .sidebar-new-btn:hover { opacity: .85; }
-  .lagre-btn { padding: 8px 16px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; margin-top: 19px; transition: opacity .15s; }
+  .lagre-btn { padding: 8px 16px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .15s; }
   .lagre-btn:hover { opacity: .85; }
   .lagre-btn:disabled { opacity: .4; cursor: not-allowed; }
 
@@ -61,13 +61,17 @@
   .summary-panel { width: 320px; min-width: 320px; background: var(--bg); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; }
 
   /* NAME BAR */
-  .name-bar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 12px; align-items: flex-start; }
-  .name-bar .field { flex: 1; }
+  .name-bar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .name-bar .field { flex: 1; min-width: 160px; }
+  .name-bar .field.proj { flex: 2; min-width: 200px; }
   .name-bar .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
   .name-bar .field input { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; }
   .name-bar .field input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
   .name-bar .field.proj input { font-weight: 600; }
   .proj-hint { font-size: 11px; color: var(--text-hint); margin-top: 3px; min-height: 16px; }
+  .lagre-wrap { display: flex; flex-direction: column; flex-shrink: 0; }
+  .lagre-wrap .lbl-spacer { font-size: 11px; display: block; margin-bottom: 4px; visibility: hidden; }
+  .lagre-wrap .hint-spacer { font-size: 11px; margin-top: 3px; min-height: 16px; visibility: hidden; }
 
   /* FORM */
   label.lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
@@ -188,7 +192,10 @@
   @media (max-width: 600px) {
     .main { flex-direction: column; }
     .summary-panel { width: 100%; min-width: 0; border-left: none; border-top: 1px solid var(--border); }
-    .name-bar { flex-direction: column; }
+    .name-bar { flex-direction: column; align-items: stretch; }
+    .name-bar .field, .lagre-wrap { width: 100%; min-width: 0; }
+    .lagre-wrap .lbl-spacer, .lagre-wrap .hint-spacer { display: none; }
+    .lagre-btn { width: 100%; }
   }
 </style>
 </head>
@@ -230,7 +237,11 @@
         <input type="text" id="romNavn" placeholder="F.eks. Stue, Bad 1, Soverom 2" maxlength="60">
         <div class="proj-hint">&nbsp;</div>
       </div>
-      <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>Lagre</button>
+      <div class="lagre-wrap">
+        <span class="lbl-spacer">.</span>
+        <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>Lagre</button>
+        <div class="hint-spacer">&nbsp;</div>
+      </div>
     </div>
 
     <div class="main">
