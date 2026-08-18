@@ -44,8 +44,13 @@
   .proj-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .1s; border-left: 3px solid transparent; }
   .proj-item:hover { background: var(--bg-sec); }
   .proj-item.active { background: var(--blue-light); border-left-color: var(--blue); }
-  .proj-item-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .proj-item-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
   .proj-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .proj-del-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; opacity: .4; flex-shrink: 0; }
+  .proj-del-btn:hover { opacity: 1; background: var(--red-light); }
+  .lagre-btn { padding: 8px 16px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; align-self: flex-end; transition: opacity .15s; }
+  .lagre-btn:hover { opacity: .85; }
+  .lagre-btn:disabled { opacity: .4; cursor: not-allowed; }
 
   /* MAIN AREA */
   .main { display: flex; flex: 1; overflow: hidden; }
@@ -202,6 +207,7 @@
       <input type="text" id="romNavn" placeholder="F.eks. Stue, Bad 1, Soverom 2" maxlength="60">
       <div class="proj-hint">&nbsp;</div>
     </div>
+    <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>💾 Lagre</button>
   </div>
 
   <div class="loading-overlay hidden" id="loadingOverlay">⏳ Laster prosjekt fra Firebase...</div>
@@ -357,11 +363,41 @@ function renderProjectList(projects) {
   el.innerHTML = projects.map(p => {
     const isActive = p.navn === state.projNavn;
     const safe = p.navn.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-    return `<div class="proj-item${isActive?" active":""}" onclick="loadProject('${safe}')">
-      <div class="proj-item-name">${p.navn}</div>
-      <div class="proj-item-meta">${p.count} rom</div>
+    return `<div class="proj-item${isActive?" active":""}">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="flex:1;min-width:0" onclick="loadProject('${safe}')" style="cursor:pointer">
+          <div class="proj-item-name">${p.navn}</div>
+          <div class="proj-item-meta">${p.count} rom</div>
+        </div>
+        <button class="proj-del-btn" onclick="deleteProject('${safe}')" title="Slett prosjekt">🗑</button>
+      </div>
     </div>`;
   }).join("");
+}
+
+async function deleteProject(navn) {
+  if (!confirm(`Slette hele prosjektet "${navn}"?\nAlle ${navn}-rom vil bli slettet fra Firebase.`)) return;
+  if (!db) return;
+  document.getElementById("loadingOverlay").classList.remove("hidden");
+  try {
+    const snap = await db.collection(COLL).where("projNavn","==",navn).get();
+    const ids = snap.docs.map(d => d.id);
+    await deleteRoomsFromFirebase(ids);
+    if (state.projNavn === navn) {
+      state.rooms = [];
+      state.projNavn = "";
+      localStorage.removeItem("befaring_projNavn");
+      document.getElementById("projNavn").value = "";
+      document.getElementById("projHint").textContent = "Skriv prosjektnavn for å laste eller starte prosjekt";
+      renderSummary();
+    }
+    showToast(`✓ Prosjekt "${navn}" slettet`);
+    loadProjectList();
+  } catch(e) {
+    showToast("⚠ Sletting feilet", true);
+  } finally {
+    document.getElementById("loadingOverlay").classList.add("hidden");
+  }
 }
 
 async function loadProject(navn) {
@@ -421,6 +457,8 @@ function onProjNameChange() {
   state.projNavn = val;
   localStorage.setItem("befaring_projNavn", val);
   renderSummary();
+  const lagreBtn = document.getElementById("lagreBtn");
+  if (lagreBtn) lagreBtn.disabled = val.trim().length < 2;
   clearTimeout(projDebounce);
   if (val.trim().length > 2) {
     document.getElementById("projHint").textContent = "⏳ Søker etter prosjekt...";
@@ -433,6 +471,23 @@ function onProjNameChange() {
     state.rooms = [];
     renderSummary();
     document.getElementById("projHint").textContent = "Skriv prosjektnavn for å laste eller starte prosjekt";
+  }
+}
+
+async function lagreProsjekt() {
+  const projNavn = document.getElementById("projNavn").value.trim();
+  if (!projNavn) return;
+  if (!state.rooms.length) { showToast("Legg til rom først", true); return; }
+  const btn = document.getElementById("lagreBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Lagrer..."; }
+  try {
+    // Rooms are already saved individually – this just confirms and refreshes
+    state.projNavn = projNavn;
+    localStorage.setItem("befaring_projNavn", projNavn);
+    await loadProjectList();
+    showToast(`✓ Prosjekt "${projNavn}" lagret`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "💾 Lagre"; }
   }
 }
 
