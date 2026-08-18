@@ -176,7 +176,8 @@
     .summary-panel { width: 100%; border: none; padding: 0; }
   }
   @media (max-width: 900px) {
-    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 200; box-shadow: 2px 0 12px rgba(0,0,0,.15); }
+    .body-wrap { position: relative; }
+    .sidebar { position: absolute; left: 0; top: 0; bottom: 0; z-index: 200; box-shadow: 2px 0 12px rgba(0,0,0,.15); }
     .sidebar.collapsed { width: 0; min-width: 0; box-shadow: none; }
     .summary-panel { width: 280px; min-width: 280px; }
     .sidebar-backdrop { display: block; }
