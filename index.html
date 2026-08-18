@@ -33,6 +33,7 @@
   .fb-status.err { background: rgba(255,80,80,.4); }
 
   .body-wrap { display: flex; flex: 1; overflow: hidden; }
+  .right-section { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 
   /* SIDEBAR */
   .sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: width .2s ease, min-width .2s ease; }
@@ -202,20 +203,6 @@
     <div class="fb-status" id="fbStatus">⏳ Kobler til...</div>
   </div>
 
-  <div class="name-bar">
-    <div class="field proj">
-      <label>Prosjektnavn</label>
-      <input type="text" id="projNavn" placeholder="F.eks. Enebolig Bergveien 4" maxlength="80" oninput="onProjNameChange()">
-      <div class="proj-hint" id="projHint">Skriv prosjektnavn for å laste eller starte prosjekt</div>
-    </div>
-    <div class="field">
-      <label>Romnavn</label>
-      <input type="text" id="romNavn" placeholder="F.eks. Stue, Bad 1, Soverom 2" maxlength="60">
-      <div class="proj-hint">&nbsp;</div>
-    </div>
-    <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>Lagre</button>
-  </div>
-
   <div class="loading-overlay hidden" id="loadingOverlay">⏳ Laster prosjekt fra Firebase...</div>
   <div class="sidebar-backdrop hidden" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
@@ -229,6 +216,21 @@
       <div class="sidebar-list" id="projList">
         <div class="sidebar-empty">Laster...</div>
       </div>
+    </div>
+
+    <div class="right-section">
+    <div class="name-bar">
+      <div class="field proj">
+        <label>Prosjektnavn</label>
+        <input type="text" id="projNavn" placeholder="F.eks. Enebolig Bergveien 4" maxlength="80" oninput="onProjNameChange()">
+        <div class="proj-hint" id="projHint">Skriv prosjektnavn for å laste eller starte prosjekt</div>
+      </div>
+      <div class="field">
+        <label>Romnavn</label>
+        <input type="text" id="romNavn" placeholder="F.eks. Stue, Bad 1, Soverom 2" maxlength="60">
+        <div class="proj-hint">&nbsp;</div>
+      </div>
+      <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>Lagre</button>
     </div>
 
     <div class="main">
@@ -287,7 +289,8 @@
         <div id="sumContent"><div class="sum-empty">Ingen rom lagt til ennå</div></div>
       </div>
     </div>
-  </div>
+    </div><!-- /right-section -->
+  </div><!-- /body-wrap -->
 </div>
 
 <div class="toast" id="toast"></div>
@@ -429,9 +432,14 @@ async function loadRoomsFromFirebase(projNavn) {
   try {
     const snap = await db.collection(COLL)
       .where("projNavn", "==", projNavn)
-      .orderBy("created_at", "asc")
       .get();
-    state.rooms = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    state.rooms = snap.docs
+      .map(d => ({ ...d.data(), _id: d.id }))
+      .sort((a, b) => {
+        const ta = a.created_at?.seconds ?? 0;
+        const tb = b.created_at?.seconds ?? 0;
+        return ta - tb;
+      });
     renderSummary();
     const n = state.rooms.length;
     showToast(n > 0 ? `✓ Lastet ${n} rom for "${projNavn}"` : `Ingen rom funnet – start nytt!`);
