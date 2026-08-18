@@ -65,7 +65,7 @@
   .name-bar .field { flex: 1; min-width: 160px; }
   .name-bar .field.proj { flex: 2; min-width: 200px; }
   .name-bar .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
-  .name-bar .field input { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; }
+  .name-bar .field input { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 16px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; }
   .name-bar .field input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
   .name-bar .field.proj input { font-weight: 600; }
   .proj-hint { font-size: 11px; color: var(--text-hint); margin-top: 3px; min-height: 16px; }
@@ -75,7 +75,7 @@
 
   /* FORM */
   label.lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
-  input[type=text], input[type=number], select, textarea { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; }
+  input[type=text], input[type=number], select, textarea { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 16px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; }
   input[type=text]:focus, input[type=number]:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
   input[type=number] { width: 100px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
@@ -851,8 +851,28 @@ function renderSummary() {
     `<div style="margin-top:12px;padding:10px 14px;background:var(--bg-sec);border-radius:var(--radius);font-size:12px;color:var(--text-muted)">
       <strong style="color:var(--text)">Totalt:</strong> ${rooms.length} rom · ${tot.m2} m² · ${tot.stikk} stikkontakter · ${tot.kurser} kurser${varmetot>0?" · "+varmetot+" m² gulvvarme":""}
     </div>
-    <button class="sum-export-btn" onclick="window.print()">🖨 Skriv ut / lagre som PDF</button>
-    <button class="sum-new-btn" onclick="startNytt()">+ Nytt prosjekt</button>`;
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="sum-export-btn" style="margin-top:0;flex:1" onclick="window.print()">Skriv ut / PDF</button>
+      <button class="sum-export-btn" style="margin-top:0;flex:1;background:var(--green)" onclick="exportExcel()">Eksporter Excel</button>
+    </div>`;
+}
+
+function exportExcel() {
+  const projNavn = state.projNavn || document.getElementById("projNavn")?.value.trim() || "Prosjekt";
+  const rooms = state.rooms;
+  if (!rooms.length) { showToast("Ingen rom å eksportere", true); return; }
+
+  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Røykvarsler","Komfyrvakt"];
+  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.royk,r.komfyrvakt].map(v => v == null ? "" : v));
+
+  const csv = [cols, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
+  const bom = "﻿";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = projNavn.replace(/[^a-zA-Z0-9æøåÆØÅ _-]/g,"_") + ".csv";
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
 async function deleteGroup(navn) {
