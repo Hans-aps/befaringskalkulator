@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Befaringskalkulator – Elektro</title>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --blue: #185FA5; --blue-light: #E6F1FB; --blue-border: #85B7EB;
+    --text: #1a1a1a; --text-muted: #666; --text-hint: #999;
+    --bg: #fff; --bg-sec: #f5f5f3; --bg-ter: #eeede9;
+    --border: rgba(0,0,0,0.12); --border-med: rgba(0,0,0,0.22);
+    --radius: 8px; --radius-lg: 12px;
+    --green: #0F6E56; --green-light: #E1F5EE;
+    --red: #A32D2D; --red-light: #FCEBEB;
+    --orange: #C25A00; --orange-light: #FFF0E0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--text); background: var(--bg-ter); min-height: 100vh; }
+
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--blue); color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+  .topbar-sub { font-size: 12px; opacity: .75; }
+  .fb-status { font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(255,255,255,.15); }
+  .fb-status.ok { background: rgba(255,255,255,.2); }
+  .fb-status.err { background: rgba(255,80,80,.4); }
+  .main { display: flex; flex: 1; gap: 0; }
+  .content { flex: 1; padding: 20px; overflow-y: auto; max-width: 740px; }
+  .summary-panel { width: 340px; min-width: 340px; background: var(--bg); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+
+  .name-bar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; gap: 12px; align-items: flex-end; }
+  .name-bar .field { flex: 1; }
+  .name-bar .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  .name-bar .field input { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; }
+  .name-bar .field input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
+  .name-bar .field.proj input { font-weight: 600; font-size: 15px; }
+  .proj-hint { font-size: 11px; color: var(--text-hint); margin-top: 3px; }
+
+  label.lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number], select, textarea {
+    border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px;
+    font-size: 14px; color: var(--text); background: var(--bg); width: 100%;
+    transition: border-color .15s;
+  }
+  input[type=text]:focus, input[type=number]:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
+  input[type=number] { width: 100px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: flex-end; }
+
+  .room-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .room-btn { border: 1px solid var(--border-med); background: var(--bg); border-radius: var(--radius); padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--text); transition: all .1s; }
+  .room-btn:hover { background: var(--bg-sec); }
+  .room-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 500; }
+  .active-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); background: var(--bg-sec); border-radius: var(--radius); padding: 4px 10px; margin-bottom: 16px; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
+  .card { background: var(--bg-sec); border-radius: var(--radius); padding: 12px 14px; }
+  .card.hi { background: var(--blue-light); border: 1px solid var(--blue-border); }
+  .card-num { font-size: 22px; font-weight: 600; color: var(--text); margin: 4px 0 2px; }
+  .card.hi .card-num { color: var(--blue); }
+  .card-lbl { font-size: 12px; color: var(--text-muted); }
+  .card.hi .card-lbl { color: var(--blue); }
+  .card-note { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
+
+  .kurs-box { display: flex; align-items: center; gap: 10px; background: var(--bg-sec); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .kurs-lbl { font-size: 13px; color: var(--text-muted); }
+  .kurs-rec { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
+
+  .tv-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .tv-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
+  .tv-row label { font-size: 13px; cursor: pointer; }
+  .tv-row .sub { font-size: 12px; color: var(--text-muted); }
+
+  .sec-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 20px 0 10px; display: flex; align-items: center; gap: 6px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  .xrow { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 8px; }
+  .xhdr { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; background: var(--bg); user-select: none; transition: background .1s; }
+  .xhdr:hover { background: var(--bg-sec); }
+  .xhdr input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; }
+  .xname { font-size: 14px; font-weight: 500; flex: 1; }
+  .xsub { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+  .xbody { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--bg-sec); display: none; }
+  .xbody.open { display: block; }
+  .xrec { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .xrec-num { font-size: 22px; font-weight: 600; }
+  .xrec-lbl { font-size: 13px; color: var(--text-muted); }
+  .xnote { font-size: 11px; color: var(--text-hint); margin-bottom: 10px; }
+  .xinput { display: flex; align-items: center; gap: 8px; }
+  .xinput label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .xinput input[type=number] { width: 80px; }
+
+  .xrow.sikkerhet { border-color: var(--orange); }
+  .xrow.sikkerhet .xhdr { background: var(--orange-light); }
+  .xrow.sikkerhet .xhdr:hover { background: #ffe4c4; }
+  .xrow.sikkerhet .xname { color: var(--orange); }
+
+  .nek { border-left: 3px solid var(--blue); background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 12px; margin: 16px 0; font-size: 12px; color: var(--text-muted); }
+  .nek strong { color: var(--blue); }
+
+  .ferdig-btn { width: 100%; padding: 14px; margin-top: 20px; background: var(--green); color: #fff; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .ferdig-btn:hover { opacity: .9; }
+  .ferdig-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; padding: 12px 24px; border-radius: var(--radius-lg); font-size: 14px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,.2); z-index: 500; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .toast.warn { background: var(--orange); }
+
+  .sum-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .sum-proj-name { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .sum-empty { font-size: 13px; color: var(--text-hint); text-align: center; padding: 24px 0; }
+  .sum-group { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; }
+  .sum-group-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-sec); border-bottom: 1px solid var(--border); }
+  .sum-group-name { font-size: 14px; font-weight: 600; }
+  .sum-group-meta { font-size: 12px; color: var(--text-muted); }
+  .sum-group-right { display: flex; align-items: center; gap: 8px; }
+  .sum-del { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 11px; color: var(--text-muted); cursor: pointer; }
+  .sum-del:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .sum-rows { padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; }
+  .sum-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .sum-row:last-child { border-bottom: none; }
+  .sum-key { color: var(--text-muted); }
+  .sum-val { font-weight: 500; }
+  .sum-export-btn { width: 100%; padding: 9px; background: var(--blue); color:#fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight:500; cursor: pointer; margin-top: 12px; }
+  .sum-export-btn:hover { opacity:.9; }
+  .sum-new-btn { width: 100%; padding: 9px; background: var(--bg); border: 1px solid var(--blue); border-radius: var(--radius); font-size: 13px; color: var(--blue); font-weight: 500; cursor: pointer; margin-top: 6px; }
+  .sum-new-btn:hover { background: var(--blue-light); }
+
+  .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; z-index: 200; font-size: 15px; color: var(--blue); font-weight: 500; }
+  .loading-overlay.hidden { display: none; }
+  .hidden { display: none !important; }
+
+  @media print {
+    .topbar, .name-bar, .ferdig-btn, .sum-del, .sum-export-btn, .sum-new-btn { display: none !important; }
+    .main { display: block; }
+    .content { display: none; }
+    .summary-panel { width: 100%; border: none; padding: 0; }
+  }
+  @media (max-width: 768px) {
+    .main { flex-direction: column; }
+    .name-bar { flex-direction: column; align-items: stretch; }
+    .summary-panel { width: 100%; min-width: 0; border-left: none; border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div style="flex:1">
+      <div class="topbar-title">⚡ Befaringskalkulator</div>
+      <div class="topbar-sub">Elektroinstallasjon – NEK 400</div>
+    </div>
+    <div class="fb-status" id="fbStatus">⏳ Kobler til...</div>
+  </div>
+
+  <div class="name-bar">
+    <div class="field proj">
+      <label>Prosjektnavn</label>
+      <input type="text" id="projNavn" placeholder="F.eks. Enebolig Bergveien 4" maxlength="80" oninput="onProjNameChange()">
+      <div class="proj-hint" id="projHint">Skriv prosjektnavn for å laste eller starte prosjekt</div>
+    </div>
+    <div class="field">
+      <label>Romnavn</label>
+      <input type="text" id="romNavn" placeholder="F.eks. Stue, Bad 1, Soverom 2" maxlength="60">
+    </div>
+  </div>
+
+  <div class="loading-overlay hidden" id="loadingOverlay">⏳ Laster prosjekt fra Firebase...</div>
+
+  <div class="main">
+    <div class="content" id="calcContent">
+      <div class="room-btns" id="roomBtns"></div>
+      <div class="active-tag">📍 Romtype: <strong id="activeRoomLabel"></strong></div>
+      <div class="field-row">
+        <div class="field"><label class="lbl">Gulvareal (m²)</label><input type="number" id="sqm" value="0" min="0" max="500" step="1" oninput="update()"></div>
+        <div class="field"><label class="lbl">Takhøyde (m)</label><input type="number" id="takhyde" value="2.4" min="2.0" max="5.0" step="0.1" oninput="update()"></div>
+        <div id="extraInputs" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"></div>
+      </div>
+      <div class="tv-row hidden" id="tvRow">
+        <input type="checkbox" id="cb-tv" onchange="update()">
+        <label for="cb-tv">TV i rommet <span class="sub">– legger til seksveisstikk (6 uttak)</span></label>
+      </div>
+      <hr class="divider">
+      <div class="card-grid" id="results"></div>
+      <div class="kurs-box">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" id="kursInput" value="0" min="0" max="30" step="1" style="width:70px;font-size:18px;font-weight:600">
+            <div class="kurs-lbl">sikringskurser</div>
+          </div>
+          <div class="kurs-rec" id="kursRec">Fyll inn m² for anbefaling</div>
+        </div>
+      </div>
+
+      <div class="sec-title">Datauttak</div>
+      <div id="xrows-data"></div>
+
+      <div class="sec-title">Belysning</div>
+      <div id="xrows-lys"></div>
+      <div id="speilRow" style="display:none"></div>
+
+      <div class="sec-title">Montering belysning</div>
+      <div id="xrows-montering"></div>
+
+      <div class="sec-title">Lysstyring</div>
+      <div id="xrows-styring"></div>
+
+      <div class="sec-title">Oppvarmingskilde</div>
+      <div id="xrows-varme"></div>
+
+      <div class="sec-title" id="sikkTitle" style="display:none">Sikkerhet</div>
+      <div id="xrows-sikkerhet" style="display:none"></div>
+
+      <div class="nek" id="nekBox"></div>
+      <button class="ferdig-btn" onclick="ferdigRom()">✓ Ferdig rom – legg til oppsummering</button>
+    </div>
+
+    <div class="summary-panel" id="sumPanel">
+      <div class="sum-title">Oppsummering</div>
+      <div class="sum-proj-name" id="sumProjName">Fyll inn prosjektnavn</div>
+      <div id="sumContent"><div class="sum-empty">Ingen rom lagt til ennå</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+// FYLL INN DINE FIREBASE-VERDIER HER:
+const firebaseConfig = {
+  apiKey:            "AIzaSyCt5_fMRSLFB3yH-Cen9PdyNAFb2NK74Qk",
+  authDomain:        "befaringskalkulator---bovg.firebaseapp.com",
+  projectId:         "befaringskalkulator---bovg",
+  storageBucket:     "befaringskalkulator---bovg.firebasestorage.app",
+  messagingSenderId: "197520931455",
+  appId:             "1:197520931455:web:5ae2e3bc61b5f0dde45d4a"
+};
+
+let db = null;
+const COLL = "befaring_rooms";
+
+function initFirebase() {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    setFbStatus("✓ Firebase", true);
+  } catch(e) {
+    setFbStatus("⚠ Frakoblet", false);
+    console.error("Firebase init:", e);
+  }
+}
+
+function setFbStatus(msg, ok) {
+  const el = document.getElementById("fbStatus");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "fb-status " + (ok ? "ok" : "err");
+}
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const ROOMS_DEF = {
+  stue:     { label:"Stue",       nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>.", stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:(m)=>m>25?3:2, hasTv:true,  data:(m)=>2,  dataNote:"2 datauttak anbefalt i stue",         kurs:(m)=>Math.ceil(m/20)+1, extras:[], ip:false, hasBad:false, hasSikk:false, lys:{down:{per:2,n:"1 downlight per 2 m²"},lamp:{per:8,n:"1 lampepunkt per 6–10 m²"},spot:{per:4,n:"1 spotlight per 3–5 m²"},vegg:{per:10,n:"1 vegglampe per 8–12 m²"}}, varme:{panel:(m)=>Math.ceil(m/20)} },
+  soverom:  { label:"Soverom",    nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>.", stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:()=>2,          hasTv:true,  data:(m)=>1,  dataNote:"1 datauttak anbefalt",                kurs:()=>1,                  extras:[], ip:false, hasBad:false, hasSikk:false, lys:{down:{per:2.5,n:"1 downlight per 2–3 m²"},lamp:{per:10,n:"1 lampepunkt over seng"},spot:{per:5,n:"1 spotlight per 4–6 m²"},vegg:{per:0,n:"2 vegglamper ved seng"}}, varme:{panel:(m)=>Math.ceil(m/20)} },
+  kjokken:  { label:"Kjøkken",    nek:"Min. <strong>1 uttak per fast apparat</strong> + <strong>2 uttak per 2 m benk</strong> + <strong>4 uttak</strong> ved spiseplass + min. 2 per 2 m fri vegg.", stikk:(m,ex)=>Math.ceil(((parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2)/2), uttak:(m,ex)=>(parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2, bryter:()=>1, hasTv:false, data:(m)=>1, dataNote:"1 datauttak anbefalt", kurs:(m,ex)=>Math.ceil((parseInt(ex.app)||5)/2)+2, extras:[{id:"app",label:"Faste apparater",type:"number",def:5,min:1,max:20},{id:"benk",label:"Benkemeter (m)",type:"number",def:3,min:1,max:12,step:0.5},{id:"fv",label:"Fri vegg (m)",type:"number",def:2,min:0,max:10,step:0.5},{id:"spl",label:"Spiseplass?",type:"select",opts:[{v:"0",l:"Nei"},{v:"1",l:"Ja (+4)"}],def:"0"}], ip:false, hasBad:false, hasSikk:true, lys:{down:{per:1.5,n:"1 downlight per 1–2 m²"},lamp:{per:0,n:"Lampepunkt over spisebord"},spot:{per:3,n:"1 spotlight per 2–3 m²"},vegg:{per:0,n:"Vegglampe ved spiseplass"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
+  bad:      { label:"Bad/WC",     nek:"Min. <strong>2 uttak (1 dobbel)</strong> – under 3 m² godtas 1 uttak. Kun sone 3 (>60 cm fra vann).", stikk:(m)=>1, uttak:(m)=>m<3?1:2, bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig på bad", kurs:(m)=>Math.ceil(m/6)+1, extras:[], ip:true, hasBad:true, hasSikk:false, lys:{down:{per:1.5,n:"IP44/65. 1 per 1–2 m²"},lamp:{per:0,n:"Taklampe IP44"},spot:{per:3,n:"IP44-spotlight"},vegg:{per:0,n:"Veggarmatur IP44"}}, varme:{panel:null} },
+  gang:     { label:"Entré/gang", nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 6 m²</strong>.", stikk:(m)=>Math.ceil(m/6), uttak:(m)=>Math.ceil(m/6)*2, bryter:(m)=>Math.max(2,Math.ceil(m/5)), hasTv:false, data:()=>0, dataNote:"Datauttak sjelden nødvendig", kurs:()=>1, extras:[], ip:false, hasBad:false, hasSikk:false, lys:{down:{per:1.8,n:"1 downlight per 1,5–2 m²"},lamp:{per:6,n:"1 lampepunkt per 4–8 m²"},spot:{per:4,n:"1 spotlight per 3–5 m²"},vegg:{per:5,n:"1 vegglampe per 4–6 m²"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
+  garasje:  { label:"Garasje/bod",nek:"Tilpasses funksjon – <strong>minimum 2 uttak (1 dobbel)</strong>.", stikk:(m)=>Math.max(1,Math.ceil(m/8)), uttak:(m)=>Math.max(2,Math.ceil(m/8)*2), bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak valgfritt", kurs:(m)=>Math.ceil(m/25)+1, extras:[], ip:true, hasBad:false, hasSikk:false, lys:{down:{per:3,n:"IP44. 1 per 3–4 m²"},lamp:{per:0,n:"Takarmatur – 1 per 8–12 m²"},spot:{per:5,n:"1 spotlight over arbeidsbenk"},vegg:{per:0,n:"Veggarmatur ved inngang"}}, varme:{panel:(m)=>Math.ceil(m/25)} },
+  utvendig: { label:"Utvendig",   nek:"Min. <strong>2 uttak (1 dobbel)</strong> på alle verandaer, altaner og balkonger.", stikk:(m)=>Math.max(1,Math.ceil(m/10)), uttak:(m)=>Math.max(2,Math.ceil(m/10)*2), bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig", kurs:()=>1, extras:[], ip:true, hasBad:false, hasSikk:false, lys:{down:{per:3,n:"IP65. 1 per 2–4 m²"},lamp:{per:0,n:"Veggarmatur ved dør"},spot:{per:5,n:"IP65 spotlight"},vegg:{per:0,n:"Veggarmatur IP65"}}, varme:{panel:null} }
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let state = { rooms: [], projNavn: "" };
+let curRoom = "stue";
+let lastRecs = {};
+let projDebounce = null;
+
+// ─── FIREBASE CRUD ────────────────────────────────────────────────────────────
+async function loadRoomsFromFirebase(projNavn) {
+  if (!db || !projNavn) return;
+  document.getElementById("loadingOverlay").classList.remove("hidden");
+  try {
+    const snap = await db.collection(COLL)
+      .where("projNavn", "==", projNavn)
+      .orderBy("created_at", "asc")
+      .get();
+    state.rooms = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    renderSummary();
+    const n = state.rooms.length;
+    showToast(n > 0 ? `✓ Lastet ${n} rom for "${projNavn}"` : `Ingen rom funnet for "${projNavn}" – start nytt!`);
+  } catch(e) {
+    console.error("Firebase load error:", e);
+    showToast("⚠ Kunne ikke laste fra Firebase", true);
+  } finally {
+    document.getElementById("loadingOverlay").classList.add("hidden");
+  }
+}
+
+async function saveRoomToFirebase(rom) {
+  if (!db) return null;
+  try {
+    const docRef = await db.collection(COLL).add({
+      ...rom,
+      created_at: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return docRef.id;
+  } catch(e) {
+    console.error("Firebase save error:", e);
+    showToast("⚠ Lagring til Firebase feilet", true);
+    return null;
+  }
+}
+
+async function deleteRoomsFromFirebase(ids) {
+  if (!db || !ids.length) return;
+  const batch = db.batch();
+  ids.forEach(id => batch.delete(db.collection(COLL).doc(id)));
+  await batch.commit();
+}
+
+// ─── PROJ NAME CHANGE ─────────────────────────────────────────────────────────
+function onProjNameChange() {
+  const val = document.getElementById("projNavn").value;
+  state.projNavn = val;
+  localStorage.setItem("befaring_projNavn", val);
+  renderSummary();
+  clearTimeout(projDebounce);
+  if (val.trim().length > 2) {
+    document.getElementById("projHint").textContent = "⏳ Søker etter prosjekt...";
+    projDebounce = setTimeout(async () => {
+      state.rooms = [];
+      await loadRoomsFromFirebase(val.trim());
+      document.getElementById("projHint").textContent = "Samme prosjektnavn = samme prosjekt på alle enheter";
+    }, 900);
+  } else {
+    state.rooms = [];
+    renderSummary();
+    document.getElementById("projHint").textContent = "Skriv prosjektnavn for å laste eller starte prosjekt";
+  }
+}
+
+// ─── BUILD XROW GROUPS ───────────────────────────────────────────────────────
+function buildXrows() {
+  document.getElementById("xrows-data").innerHTML = xrow("data","Datauttak","RJ45 nettverkspunkt");
+  document.getElementById("xrows-lys").innerHTML =
+    xrow("down","Downlight","innfelt i tak") +
+    xrow("lamp","Lampepunkt","pendel / taklampe") +
+    xrow("spot","Spotlight","skinne / justerbar") +
+    xrow("vegg","Vegglampe","applique / veggarmatur");
+  document.getElementById("speilRow").innerHTML = xrow("speil","Speilbelysning","over/rundt speil");
+  document.getElementById("xrows-montering").innerHTML =
+    xrow("montvgg","Montering vegglampe","feste, kabling og tilkobling") +
+    xrow("monttak","Montering taklampe","oppheng, kabling og tilkobling") +
+    xrow("montled","Montering ledstrip","m ledstrip inkl. feste og driver");
+  document.getElementById("xrows-styring").innerHTML =
+    xrow("dimmer","Dimmer","trinnløs lysstyrke") +
+    xrow("bryter","Bryter","standard lysbryter");
+  document.getElementById("xrows-varme").innerHTML =
+    xrow("vkabel","Varmekabel","anbefalt: hele gulvarealet") +
+    xrow("vfolie","Varmefolie","anbefalt: hele gulvarealet") +
+    xrow("lavkabel","Lavtbyggende varmekabel","anbefalt: hele gulvarealet") +
+    xrow("panel","Panelovn","veggmontert varmeovn");
+  document.getElementById("xrows-sikkerhet").innerHTML =
+    xrow("komfyrvakt","Komfyrvakt","automatisk av ved varme eller fravær","sikkerhet");
+}
+
+function xrow(id, name, sub, cls) {
+  return `<div class="xrow${cls?" "+cls:""}" id="xrow-${id}">
+    <label class="xhdr"><input type="checkbox" id="cb-${id}" onchange="toggleBody('${id}',this.checked)">
+    <span class="xname">${name} <span class="xsub">– ${sub}</span></span></label>
+    <div class="xbody" id="body-${id}">
+      <div class="xrec"><span class="xrec-num" id="rec-${id}">–</span><span class="xrec-lbl">anbefalt</span></div>
+      <div class="xnote" id="note-${id}"></div>
+      <div class="xinput"><label for="val-${id}">Ønsket antall ${pluralLabel(id)}:</label><input type="number" id="val-${id}" min="0" max="9999" placeholder="–"></div>
+    </div>
+  </div>`;
+}
+
+const PLURAL = {
+  data:"datauttak", down:"downlights", lamp:"lampepunkter", spot:"spotlights",
+  vegg:"vegglamper", speil:"speillamper", dimmer:"dimmere", bryter:"brytere",
+  vkabel:"m² varmekabel", vfolie:"m² varmefolie", lavkabel:"m² lavtbyggende kabel", panel:"panelovner",
+  montvgg:"stk (vegglampe)", monttak:"stk (taklampe)", montled:"m ledstrip",
+  komfyrvakt:"komfyrvakter"
+};
+function pluralLabel(id) { return PLURAL[id]||id; }
+function toggleBody(id, open) { document.getElementById("body-"+id)?.classList.toggle("open", open); }
+
+// ─── ROOM BUTTONS ────────────────────────────────────────────────────────────
+function buildRoomBtns() {
+  document.getElementById("roomBtns").innerHTML =
+    Object.entries(ROOMS_DEF).map(([k,r])=>
+      `<button class="room-btn${k===curRoom?" active":""}" data-room="${k}" onclick="selectRoom('${k}')">${r.label}</button>`
+    ).join("");
+  document.getElementById("activeRoomLabel").textContent = ROOMS_DEF[curRoom].label;
+}
+
+function selectRoom(room) {
+  curRoom = room;
+  document.querySelectorAll(".room-btn").forEach(b => b.classList.toggle("active", b.dataset.room === room));
+  document.getElementById("activeRoomLabel").textContent = ROOMS_DEF[room].label;
+  const r = ROOMS_DEF[room];
+
+  document.getElementById("tvRow")?.classList.toggle("hidden", !r.hasTv);
+  if (!r.hasTv && document.getElementById("cb-tv")) document.getElementById("cb-tv").checked = false;
+
+  const speilRow = document.getElementById("speilRow");
+  if (speilRow) speilRow.style.display = r.hasBad ? "" : "none";
+  if (!r.hasBad && document.getElementById("cb-speil")) {
+    document.getElementById("cb-speil").checked = false;
+    document.getElementById("body-speil")?.classList.remove("open");
+  }
+
+  const sikkEl    = document.getElementById("xrows-sikkerhet");
+  const sikkTitle = document.getElementById("sikkTitle");
+  if (sikkEl)    sikkEl.style.display    = r.hasSikk ? "" : "none";
+  if (sikkTitle) sikkTitle.style.display = r.hasSikk ? "" : "none";
+  if (!r.hasSikk && document.getElementById("cb-komfyrvakt")) {
+    document.getElementById("cb-komfyrvakt").checked = false;
+    document.getElementById("body-komfyrvakt")?.classList.remove("open");
+  }
+
+  renderExtras(room);
+  update();
+}
+
+function renderExtras(room) {
+  const c = document.getElementById("extraInputs");
+  if (!c) return;
+  const r = ROOMS_DEF[room];
+  if (!r.extras.length) { c.innerHTML = ""; return; }
+  c.innerHTML = r.extras.map(ex => {
+    if (ex.type === "select") return `<div class="field"><label class="lbl">${ex.label}</label><select id="ex-${ex.id}" onchange="update()" style="width:120px">${ex.opts.map(o=>`<option value="${o.v}"${o.v===ex.def?" selected":""}>${o.l}</option>`).join("")}</select></div>`;
+    return `<div class="field"><label class="lbl">${ex.label}</label><input type="number" id="ex-${ex.id}" value="${ex.def}" min="${ex.min}" max="${ex.max}" step="${ex.step||1}" oninput="update()" style="width:90px"></div>`;
+  }).join("");
+}
+
+function getEx(room) {
+  const v = {};
+  ROOMS_DEF[room].extras.forEach(ex => { const el = document.getElementById("ex-"+ex.id); v[ex.id] = el ? el.value : ex.def; });
+  return v;
+}
+
+function getChecked(id) { return document.getElementById("cb-"+id)?.checked || false; }
+function getValOrRec(id, rec) {
+  const el = document.getElementById("val-"+id);
+  if (!el) return 0;
+  return el.value !== "" ? parseFloat(el.value) : rec;
+}
+
+// ─── UPDATE ──────────────────────────────────────────────────────────────────
+function update() {
+  const m = parseFloat(document.getElementById("sqm")?.value) || 0;
+  const h = parseFloat(document.getElementById("takhyde")?.value) || 2.4;
+  const r = ROOMS_DEF[curRoom];
+  const ex = getEx(curRoom);
+  const hF = h > 2.4 ? 1 + (h-2.4)*0.2 : 1;
+  const ly = r.lys;
+  const hasTv = r.hasTv && getChecked("tv");
+
+  const stikk   = m > 0 ? r.stikk(m, ex) : 0;
+  const uttak   = m > 0 ? r.uttak(m, ex) : 0;
+  const bryter  = m > 0 ? r.bryter(m) : 0;
+  const kursRec = m > 0 ? (typeof r.kurs==="function" ? r.kurs(m,ex) : r.kurs) : 0;
+  const totKurs = hasTv ? kursRec+1 : kursRec;
+  const dataRec = m > 0 ? (typeof r.data==="function" ? r.data(m) : r.data) : 0;
+
+  const recDown    = m>0&&ly.down.per>0 ? Math.max(1,Math.round(m/ly.down.per*hF)) : 0;
+  const recLamp    = m>0&&ly.lamp.per>0 ? Math.max(1,Math.round(m/ly.lamp.per))    : 0;
+  const recSpot    = m>0&&ly.spot.per>0 ? Math.max(1,Math.round(m/ly.spot.per*hF)) : 0;
+  const recVegg    = m>0 ? (ly.vegg.per>0 ? Math.max(1,Math.round(m/ly.vegg.per)) : 2) : 0;
+  const panelRec   = r.varme.panel&&m>0 ? r.varme.panel(m) : 0;
+  const varmeRec   = m > 0 ? m : 0;
+  const recMontled = m > 0 ? Math.round(Math.sqrt(m)*2) : 0;
+
+  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled};
+
+  let html = `<div class="card"><div class="card-num">${m>0?stikk:"–"}</div><div class="card-lbl">Stikkontakter</div><div class="card-note">${m>0?uttak+" uttak":""}</div></div>`;
+  if (hasTv) html += `<div class="card hi"><div class="card-num">1</div><div class="card-lbl">Seksveisstikk</div><div class="card-note">6 uttak TV/AV</div></div>`;
+  document.getElementById("results").innerHTML = html;
+
+  if (document.getElementById("kursInput")) document.getElementById("kursInput").value = totKurs;
+  if (document.getElementById("kursRec")) document.getElementById("kursRec").textContent = m>0 ? "Anbefalt: "+totKurs : "Fyll inn m² for anbefaling";
+
+  function setRec(id, num, note) {
+    const el = document.getElementById("rec-"+id); if (el) el.textContent = m>0 ? num : "–";
+    const ne = document.getElementById("note-"+id); if (ne) ne.innerHTML = note;
+  }
+
+  setRec("data",    dataRec,       r.dataNote);
+  setRec("down",    recDown||"–",  ly.down.n);
+  setRec("lamp",    recLamp||"–",  ly.lamp.n);
+  setRec("spot",    recSpot||"–",  ly.spot.n);
+  setRec("vegg",    recVegg||"–",  ly.vegg.n);
+  setRec("speil",   1,             "IP44 min. 1 speillampe per servant.");
+  setRec("bryter",  bryter||"–",   bryter>1?"2-veis bryterpar anbefalt":"Standard 1-pol bryter");
+
+  setRec("montvgg", recVegg||"–",  "Montering av vegglampe inkl. kabling og feste");
+  setRec("monttak", recLamp||"–",  "Montering av taklampe / pendel inkl. oppheng og kabling");
+  setRec("montled", m>0?recMontled+" m":"–", "Estimert lengde basert på areal – juster etter behov");
+
+  const varmeNote = m>0 ? `Anbefalt: <strong>hele gulvarealet – ${m} m²</strong>. Eget termostat-kurs anbefales.` : "Fyll inn m².";
+  setRec("vkabel",     m>0?m+" m²":"–", varmeNote);
+  setRec("vfolie",     m>0?m+" m²":"–", varmeNote);
+  setRec("lavkabel",   m>0?m+" m²":"–", varmeNote);
+  setRec("panel",      panelRec||"–", r.varme.panel&&m>0 ? `${panelRec} stk – ca. ${Math.round(m*35)} W (35 W/m²). Eget 16A kurs per ovn.` : "Ikke vanlig for dette rommet.");
+  setRec("komfyrvakt", 1, "<strong>1 komfyrvakt per komfyr</strong> – anbefalt av Norsk brannvernforening. Monteres over komfyr.");
+
+  ["vkabel","vfolie","lavkabel"].forEach(id => {
+    const valEl = document.getElementById("val-"+id);
+    if (valEl && document.getElementById("cb-"+id)?.checked && valEl.value === "") {
+      valEl.value = m > 0 ? m : "";
+    }
+  });
+
+  if (document.getElementById("nekBox")) document.getElementById("nekBox").innerHTML = "<strong>NEK 400:</strong> " + r.nek;
+}
+
+// ─── FERDIG ROM ──────────────────────────────────────────────────────────────
+async function ferdigRom() {
+  const projNavn  = document.getElementById("projNavn").value.trim();
+  const romNavnRaw = document.getElementById("romNavn").value.trim();
+  const romNavn   = romNavnRaw || ROOMS_DEF[curRoom].label;
+  const m         = parseFloat(document.getElementById("sqm")?.value) || 0;
+  const r         = ROOMS_DEF[curRoom];
+  const ex        = getEx(curRoom);
+  const hasTv     = r.hasTv && getChecked("tv");
+  const kursVal   = parseInt(document.getElementById("kursInput")?.value) || 0;
+
+  function rv(id, rec) {
+    if (!getChecked(id)) return 0;
+    return Math.round(getValOrRec(id, rec));
+  }
+
+  const rom = {
+    projNavn,
+    navn:          romNavn,
+    romtype:       curRoom,
+    m2:            m,
+    stikk:         m>0 ? r.stikk(m,ex) : 0,
+    uttak:         m>0 ? r.uttak(m,ex) : 0,
+    kurser:        kursVal,
+    seksveisstikk: hasTv ? 1 : 0,
+    datauttak:     rv("data",      lastRecs.dataRec),
+    down:          rv("down",      lastRecs.recDown),
+    lamp:          rv("lamp",      lastRecs.recLamp),
+    spot:          rv("spot",      lastRecs.recSpot),
+    vegg:          rv("vegg",      lastRecs.recVegg),
+    speil:         rv("speil",     1),
+    montvgg:       rv("montvgg",   lastRecs.recVegg),
+    monttak:       rv("monttak",   lastRecs.recLamp),
+    montled:       rv("montled",   lastRecs.recMontled),
+    dimmer:        rv("dimmer",    0),
+    bryter:        rv("bryter",    lastRecs.bryter),
+    vkabel:        rv("vkabel",    lastRecs.varmeRec),
+    vfolie:        rv("vfolie",    lastRecs.varmeRec),
+    lavkabel:      rv("lavkabel",  lastRecs.varmeRec),
+    panel:         rv("panel",     lastRecs.panelRec),
+    komfyrvakt:    rv("komfyrvakt",1)
+  };
+
+  const btn = document.querySelector(".ferdig-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Lagrer..."; }
+
+  const id = await saveRoomToFirebase(rom);
+  if (id) rom._id = id;
+
+  state.rooms.push(rom);
+  if (projNavn) state.projNavn = projNavn;
+  renderSummary();
+  showToast(`✓ ${romNavn} lagret`);
+  resetRoomFields();
+
+  if (btn) { btn.disabled = false; btn.textContent = "✓ Ferdig rom – legg til oppsummering"; }
+}
+
+function resetRoomFields() {
+  if (document.getElementById("romNavn"))  document.getElementById("romNavn").value  = "";
+  if (document.getElementById("sqm"))      document.getElementById("sqm").value      = 0;
+  if (document.getElementById("takhyde"))  document.getElementById("takhyde").value  = "2.4";
+  document.querySelectorAll(".xhdr input[type=checkbox]").forEach(cb => { cb.checked = false; });
+  document.querySelectorAll(".xbody").forEach(b => b.classList.remove("open"));
+  document.querySelectorAll(".xinput input[type=number]").forEach(i => i.value = "");
+  if (document.getElementById("cb-tv")) document.getElementById("cb-tv").checked = false;
+  curRoom = "stue";
+  buildRoomBtns();
+  renderExtras("stue");
+  update();
+  document.getElementById("calcContent").scrollTop = 0;
+  document.getElementById("romNavn").focus();
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg, warn) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (warn ? " warn" : "");
+  setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+// ─── SUMMARY ─────────────────────────────────────────────────────────────────
+function renderSummary() {
+  const projNavn = state.projNavn || document.getElementById("projNavn")?.value.trim() || "";
+  document.getElementById("sumProjName").textContent = projNavn || "Fyll inn prosjektnavn";
+
+  const rooms = state.rooms;
+  if (!rooms.length) {
+    document.getElementById("sumContent").innerHTML = '<div class="sum-empty">Ingen rom lagt til ennå.<br>Fyll ut kalkulatoren og trykk «Ferdig rom».</div>';
+    return;
+  }
+
+  const grouped = {};
+  const order = [];
+  rooms.forEach(rom => {
+    const key = rom.navn;
+    if (!grouped[key]) { grouped[key] = { navn: key, entries: [] }; order.push(key); }
+    grouped[key].entries.push(rom);
+  });
+
+  const sumHtml = order.map(key => {
+    const g = grouped[key];
+    const zero = {m2:0,stikk:0,uttak:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,komfyrvakt:0};
+    const agg = g.entries.reduce((a, r) => {
+      Object.keys(zero).forEach(k => { a[k] = (a[k]||0) + (r[k]||0); });
+      return a;
+    }, {...zero});
+
+    const rows = [["Stikkontakter", `${agg.stikk} stk (${agg.uttak} uttak)`]];
+    if (agg.seksveisstikk) rows.push(["Seksveisstikk",    agg.seksveisstikk+" stk"]);
+    rows.push(["Sikringskurser",                           agg.kurser+" stk"]);
+    if (agg.datauttak)  rows.push(["Datauttak",           agg.datauttak+" stk"]);
+    if (agg.down)       rows.push(["Downlights",          agg.down+" stk"]);
+    if (agg.lamp)       rows.push(["Lampepunkter",        agg.lamp+" stk"]);
+    if (agg.spot)       rows.push(["Spotlights",          agg.spot+" stk"]);
+    if (agg.vegg)       rows.push(["Vegglamper",          agg.vegg+" stk"]);
+    if (agg.speil)      rows.push(["Speilbelysning",      agg.speil+" stk"]);
+    if (agg.montvgg)    rows.push(["Mont. vegglampe",     agg.montvgg+" stk"]);
+    if (agg.monttak)    rows.push(["Mont. taklampe",      agg.monttak+" stk"]);
+    if (agg.montled)    rows.push(["Mont. ledstrip",      agg.montled+" m"]);
+    if (agg.dimmer)     rows.push(["Dimmere",             agg.dimmer+" stk"]);
+    if (agg.bryter)     rows.push(["Brytere",             agg.bryter+" stk"]);
+    if (agg.vkabel)     rows.push(["Varmekabel",          agg.vkabel+" m²"]);
+    if (agg.vfolie)     rows.push(["Varmefolie",          agg.vfolie+" m²"]);
+    if (agg.lavkabel)   rows.push(["Lavtb. varmekabel",   agg.lavkabel+" m²"]);
+    if (agg.panel)      rows.push(["Panelovner",          agg.panel+" stk"]);
+    if (agg.komfyrvakt) rows.push(["Komfyrvakt",         agg.komfyrvakt+" stk"]);
+
+    const antall  = g.entries.length > 1 ? ` (${g.entries.length} like rom)` : "";
+    const safeKey = key.replace(/'/g, "\\'");
+    return `<div class="sum-group" id="grp-${encodeURIComponent(key)}">
+      <div class="sum-group-hdr">
+        <div><div class="sum-group-name">${key}${antall}</div><div class="sum-group-meta">${agg.m2} m²</div></div>
+        <div class="sum-group-right"><button class="sum-del" onclick="deleteGroup('${safeKey}')">Slett</button></div>
+      </div>
+      <div class="sum-rows">${rows.map(([k,v])=>`<div class="sum-row"><span class="sum-key">${k}</span><span class="sum-val">${v}</span></div>`).join("")}</div>
+    </div>`;
+  }).join("");
+
+  const tot = rooms.reduce((a,r)=>({
+    stikk:a.stikk+(r.stikk||0), kurser:a.kurser+(r.kurser||0), m2:a.m2+(r.m2||0),
+    vkabel:a.vkabel+(r.vkabel||0), vfolie:a.vfolie+(r.vfolie||0), lavkabel:a.lavkabel+(r.lavkabel||0)
+  }),{stikk:0,kurser:0,m2:0,vkabel:0,vfolie:0,lavkabel:0});
+  const varmetot = tot.vkabel+tot.vfolie+tot.lavkabel;
+
+  document.getElementById("sumContent").innerHTML = sumHtml +
+    `<div style="margin-top:12px;padding:10px 14px;background:var(--bg-sec);border-radius:var(--radius);font-size:12px;color:var(--text-muted)">
+      <strong style="color:var(--text)">Totalt:</strong> ${rooms.length} rom · ${tot.m2} m² · ${tot.stikk} stikkontakter · ${tot.kurser} kurser${varmetot>0?" · "+varmetot+" m² gulvvarme":""}
+    </div>
+    <button class="sum-export-btn" onclick="window.print()">🖨 Skriv ut / lagre som PDF</button>
+    <button class="sum-new-btn" onclick="startNytt()">+ Nytt prosjekt</button>`;
+}
+
+async function deleteGroup(navn) {
+  if (!confirm(`Slette alle rom med navn "${navn}"?`)) return;
+  const toDelete = state.rooms.filter(r => r.navn === navn);
+  const ids = toDelete.map(r => r._id).filter(Boolean);
+  state.rooms = state.rooms.filter(r => r.navn !== navn);
+  renderSummary();
+  if (ids.length) {
+    try { await deleteRoomsFromFirebase(ids); }
+    catch(e) { showToast("⚠ Firebase-sletting feilet", true); }
+  }
+}
+
+async function startNytt() {
+  if (!confirm("Start nytt prosjekt? Alle rom fjernes fra visningen (data beholdes i Firebase).")) return;
+  state.rooms = [];
+  state.projNavn = "";
+  localStorage.removeItem("befaring_projNavn");
+  document.getElementById("projNavn").value = "";
+  document.getElementById("projHint").textContent = "Skriv prosjektnavn for å laste eller starte prosjekt";
+  renderSummary();
+  resetRoomFields();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+async function init() {
+  initFirebase();
+  buildXrows();
+  buildRoomBtns();
+  renderExtras("stue");
+  update();
+  document.getElementById("tvRow")?.classList.add("hidden");
+
+  const savedProj = localStorage.getItem("befaring_projNavn") || "";
+  if (savedProj) {
+    state.projNavn = savedProj;
+    document.getElementById("projNavn").value = savedProj;
+    document.getElementById("sumProjName").textContent = savedProj;
+    document.getElementById("projHint").textContent = "Laster prosjekt...";
+    await loadRoomsFromFirebase(savedProj);
+    document.getElementById("projHint").textContent = "Samme prosjektnavn = samme prosjekt på alle enheter";
+  }
+  renderSummary();
+}
+
+init();
+</script>
+</body>
+</html>
