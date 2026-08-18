@@ -853,7 +853,9 @@ async function deleteGroup(navn) {
 }
 
 async function startNytt() {
-  if (!confirm("Start nytt prosjekt? Alle rom fjernes fra visningen (data beholdes i Firebase).")) return;
+  const harUlagret = (parseFloat(document.getElementById("sqm")?.value) || 0) > 0
+                  || document.getElementById("romNavn")?.value.trim().length > 0;
+  if (harUlagret && !confirm("Ulagrede endringer vil forsvinne. Vil du fortsette?")) return;
   state.rooms = [];
   state.projNavn = "";
   localStorage.removeItem("befaring_projNavn");
