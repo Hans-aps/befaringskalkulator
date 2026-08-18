@@ -46,8 +46,10 @@
   .proj-item.active { background: var(--blue-light); border-left-color: var(--blue); }
   .proj-item-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
   .proj-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-  .proj-del-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; opacity: .4; flex-shrink: 0; }
-  .proj-del-btn:hover { opacity: 1; background: var(--red-light); }
+  .proj-del-btn { background: none; border: 1px solid var(--border); cursor: pointer; font-size: 11px; padding: 2px 7px; border-radius: 4px; color: var(--text-muted); flex-shrink: 0; }
+  .proj-del-btn:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .sidebar-new-btn { background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 11px; font-weight: 600; padding: 3px 9px; cursor: pointer; }
+  .sidebar-new-btn:hover { opacity: .85; }
   .lagre-btn { padding: 8px 16px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; align-self: flex-end; transition: opacity .15s; }
   .lagre-btn:hover { opacity: .85; }
   .lagre-btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -207,7 +209,7 @@
       <input type="text" id="romNavn" placeholder="F.eks. Stue, Bad 1, Soverom 2" maxlength="60">
       <div class="proj-hint">&nbsp;</div>
     </div>
-    <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>💾 Lagre</button>
+    <button class="lagre-btn" id="lagreBtn" onclick="lagreProsjekt()" disabled>Lagre</button>
   </div>
 
   <div class="loading-overlay hidden" id="loadingOverlay">⏳ Laster prosjekt fra Firebase...</div>
@@ -217,6 +219,7 @@
     <div class="sidebar collapsed" id="sidebar">
       <div class="sidebar-hdr">
         <span class="sidebar-hdr-title">Prosjekter</span>
+        <button class="sidebar-new-btn" onclick="startNytt()">+ Nytt</button>
       </div>
       <div class="sidebar-list" id="projList">
         <div class="sidebar-empty">Laster...</div>
@@ -369,7 +372,7 @@ function renderProjectList(projects) {
           <div class="proj-item-name">${p.navn}</div>
           <div class="proj-item-meta">${p.count} rom</div>
         </div>
-        <button class="proj-del-btn" onclick="deleteProject('${safe}')" title="Slett prosjekt">🗑</button>
+        <button class="proj-del-btn" onclick="deleteProject('${safe}')">Slett</button>
       </div>
     </div>`;
   }).join("");
@@ -487,7 +490,7 @@ async function lagreProsjekt() {
     await loadProjectList();
     showToast(`✓ Prosjekt "${projNavn}" lagret`);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "💾 Lagre"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Lagre"; }
   }
 }
 
