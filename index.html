@@ -23,7 +23,7 @@
 
   /* LAYOUT */
   .app { display: flex; flex-direction: column; min-height: 100vh; }
-  .topbar { background: var(--blue); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .topbar { background: var(--blue); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 300; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
   .topbar-toggle { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 2px 6px; border-radius: 6px; line-height: 1; flex-shrink: 0; }
   .topbar-toggle:hover { background: rgba(255,255,255,.15); }
   .topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
@@ -176,10 +176,13 @@
     .summary-panel { width: 100%; border: none; padding: 0; }
   }
   @media (max-width: 900px) {
-    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 150; box-shadow: 2px 0 12px rgba(0,0,0,.15); }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 200; box-shadow: 2px 0 12px rgba(0,0,0,.15); }
     .sidebar.collapsed { width: 0; min-width: 0; box-shadow: none; }
     .summary-panel { width: 280px; min-width: 280px; }
+    .sidebar-backdrop { display: block; }
   }
+  .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 199; }
+  .sidebar-backdrop.hidden { display: none !important; }
   @media (max-width: 600px) {
     .main { flex-direction: column; }
     .summary-panel { width: 100%; min-width: 0; border-left: none; border-top: 1px solid var(--border); }
@@ -213,6 +216,7 @@
   </div>
 
   <div class="loading-overlay hidden" id="loadingOverlay">⏳ Laster prosjekt fra Firebase...</div>
+  <div class="sidebar-backdrop hidden" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
   <div class="body-wrap">
     <!-- SIDEBAR -->
@@ -337,7 +341,10 @@ let projDebounce = null;
 
 // ─── SIDEBAR ─────────────────────────────────────────────────────────────────
 function toggleSidebar() {
-  document.getElementById("sidebar").classList.toggle("collapsed");
+  const sidebar   = document.getElementById("sidebar");
+  const backdrop  = document.getElementById("sidebarBackdrop");
+  const collapsed = sidebar.classList.toggle("collapsed");
+  if (backdrop) backdrop.classList.toggle("hidden", collapsed);
 }
 
 async function loadProjectList() {
