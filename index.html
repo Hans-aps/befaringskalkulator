@@ -907,7 +907,7 @@ function renderSummary() {
   const totalsHtml = `<div class="sum-totals">${totTiles.map(t=>`<div class="sum-total-tile"><div class="sum-total-num">${t.n}</div><div class="sum-total-lbl">${t.l}</div></div>`).join("")}</div>`;
 
   document.getElementById("sumContent").innerHTML = totalsHtml + sumHtml +
-    <div style="display:flex;gap:8px;margin-top:12px">
+    `<div style="display:flex;gap:8px;margin-top:12px">
       <button class="sum-export-btn" style="margin-top:0;flex:1" onclick="window.print()">Skriv ut / PDF</button>
       <button class="sum-export-btn" style="margin-top:0;flex:1;background:var(--green)" onclick="exportExcel()">Eksporter Excel</button>
     </div>`;
