@@ -129,10 +129,22 @@
   .xinput input[type=number] { width: 80px; }
 
   /* SIKKERHET */
-  .xrow.sikkerhet { border-color: var(--orange); }
-  .xrow.sikkerhet .xhdr { background: var(--orange-light); }
-  .xrow.sikkerhet .xhdr:hover { background: #ffe4c4; }
-  .xrow.sikkerhet .xname { color: var(--orange); }
+  .stikk-box { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 4px; }
+  .stikk-rec { padding: 8px 14px; background: var(--bg-sec); font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  .stikk-rec strong { color: var(--text); }
+  .stikk-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .stikk-type { padding: 10px 12px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+  .stikk-type:last-child { border-right: none; }
+  .stikk-type-lbl { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .stikk-type-sub { font-size: 11px; font-weight: 400; color: var(--text-hint); display: block; }
+  .stikk-type input { width: 100%; font-size: 18px; font-weight: 600; text-align: center; border: 1px solid var(--border-med); border-radius: var(--radius); padding: 6px 4px; background: var(--bg); color: var(--text); }
+  .kommentar-box { margin-top: 12px; }
+  .kommentar-box label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  .kommentar-box textarea { width: 100%; border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--text); background: var(--bg); resize: vertical; min-height: 60px; font-family: inherit; box-sizing: border-box; }
+  .sum-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; padding: 12px 14px; background: var(--bg-sec); border-radius: var(--radius); border: 1px solid var(--border); }
+  .sum-total-tile { text-align: center; }
+  .sum-total-num { font-size: 20px; font-weight: 700; color: var(--text); }
+  .sum-total-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
   /* NEK */
   .nek { border-left: 3px solid var(--blue); background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 12px; margin: 16px 0; font-size: 12px; color: var(--text-muted); }
@@ -253,7 +265,8 @@
           <label for="cb-tv">TV i rommet <span class="sub">– legger til seksveisstikk (6 uttak)</span></label>
         </div>
         <hr class="divider">
-        <div class="card-grid" id="results"></div>
+        <div class="sec-title">Stikkontakter</div>
+        <div id="stikk-section"></div>
         <div class="kurs-box">
           <div style="flex:1">
             <div style="display:flex;align-items:center;gap:8px">
@@ -284,6 +297,10 @@
         <div id="xrows-sikkerhet"></div>
 
         <div class="nek" id="nekBox"></div>
+        <div class="kommentar-box">
+          <label for="romKommentar">Kommentar</label>
+          <textarea id="romKommentar" placeholder="Evt. merknader, spesielle forhold, kundebehov..."></textarea>
+        </div>
         <button class="ferdig-btn" onclick="ferdigRom()">✓ Ferdig rom – legg til oppsummering</button>
       </div>
 
@@ -537,8 +554,17 @@ function buildXrows() {
     xrow("lavkabel","Lavtbyggende varmekabel","anbefalt: hele gulvarealet") +
     xrow("panel","Panelovn","veggmontert varmeovn");
   document.getElementById("xrows-sikkerhet").innerHTML =
-    xrow("royk","Røykvarsler","optisk eller ionisasjon","sikkerhet") +
-    xrow("komfyrvakt","Komfyrvakt","automatisk av ved varme eller fravær","sikkerhet");
+    xrow("royk","Røykvarsler","optisk eller ionisasjon") +
+    xrow("komfyrvakt","Komfyrvakt","automatisk av ved varme eller fravær");
+  document.getElementById("stikk-section").innerHTML = `<div class="stikk-box">
+    <div class="stikk-rec" id="stikkRec">Fyll inn m² for anbefaling</div>
+    <div class="stikk-types">
+      <div class="stikk-type"><div class="stikk-type-lbl">Enkelt<span class="stikk-type-sub">1 uttak</span></div><input type="number" id="stikk-enkel" value="0" min="0" step="1"></div>
+      <div class="stikk-type"><div class="stikk-type-lbl">Dobbelt<span class="stikk-type-sub">2 uttak</span></div><input type="number" id="stikk-dobbel" value="0" min="0" step="1"></div>
+      <div class="stikk-type"><div class="stikk-type-lbl">Firevei<span class="stikk-type-sub">4 uttak</span></div><input type="number" id="stikk-fire" value="0" min="0" step="1"></div>
+      <div class="stikk-type"><div class="stikk-type-lbl">Seksveis<span class="stikk-type-sub">6 uttak</span></div><input type="number" id="stikk-seks" value="0" min="0" step="1"></div>
+    </div>
+  </div>`;
 }
 
 function xrow(id, name, sub, cls) {
@@ -652,9 +678,10 @@ function update() {
 
   lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk};
 
-  let html = `<div class="card"><div class="card-num">${m>0?stikk:"–"}</div><div class="card-lbl">Stikkontakter</div><div class="card-note">${m>0?uttak+" uttak":""}</div></div>`;
-  if (hasTv) html += `<div class="card hi"><div class="card-num">1</div><div class="card-lbl">Seksveisstikk</div><div class="card-note">6 uttak TV/AV</div></div>`;
-  document.getElementById("results").innerHTML = html;
+  const stikkRecEl = document.getElementById("stikkRec");
+  if (stikkRecEl) stikkRecEl.innerHTML = m>0
+    ? `Anbefalt: <strong>${stikk} dobbelte</strong> stikkontakter (${uttak} uttak) – NEK 400`
+    : "Fyll inn m² for anbefaling";
 
   if (document.getElementById("kursInput")) document.getElementById("kursInput").value = totKurs;
   if (document.getElementById("kursRec")) document.getElementById("kursRec").textContent = m>0 ? "Anbefalt: "+totKurs : "Fyll inn m² for anbefaling";
@@ -707,15 +734,25 @@ async function ferdigRom() {
     return Math.round(getValOrRec(id, rec));
   }
 
+  const stEnkel  = parseInt(document.getElementById("stikk-enkel")?.value)  || 0;
+  const stDobbel = parseInt(document.getElementById("stikk-dobbel")?.value) || 0;
+  const stFire   = parseInt(document.getElementById("stikk-fire")?.value)   || 0;
+  const stSeks   = parseInt(document.getElementById("stikk-seks")?.value)   || 0;
+
   const rom = {
     projNavn,
     navn:          romNavn,
     romtype:       curRoom,
     m2:            m,
-    stikk:         m>0 ? r.stikk(m,ex) : 0,
-    uttak:         m>0 ? r.uttak(m,ex) : 0,
+    stikk:         stEnkel + stDobbel + stFire + stSeks,
+    uttak:         stEnkel*1 + stDobbel*2 + stFire*4 + stSeks*6,
+    stikk_enkel:   stEnkel,
+    stikk_dobbel:  stDobbel,
+    stikk_fire:    stFire,
+    stikk_seks:    stSeks,
     kurser:        kursVal,
     seksveisstikk: hasTv ? 1 : 0,
+    kommentar:     document.getElementById("romKommentar")?.value.trim() || "",
     datauttak:     rv("data",      lastRecs.dataRec),
     down:          rv("down",      lastRecs.recDown),
     lamp:          rv("lamp",      lastRecs.recLamp),
@@ -759,6 +796,8 @@ function resetRoomFields() {
   document.querySelectorAll(".xbody").forEach(b => b.classList.remove("open"));
   document.querySelectorAll(".xinput input[type=number]").forEach(i => i.value = "");
   if (document.getElementById("cb-tv")) document.getElementById("cb-tv").checked = false;
+  ["stikk-enkel","stikk-dobbel","stikk-fire","stikk-seks"].forEach(id => { const el=document.getElementById(id); if(el) el.value="0"; });
+  if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = "";
   curRoom = "stue";
   buildRoomBtns();
   renderExtras("stue");
@@ -794,7 +833,7 @@ function renderSummary() {
     grouped[key].entries.push(rom);
   });
 
-  const ZERO = {m2:0,stikk:0,uttak:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,royk:0,komfyrvakt:0};
+  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,royk:0,komfyrvakt:0};
 
   const sumHtml = order.map(key => {
     const g = grouped[key];
@@ -802,9 +841,19 @@ function renderSummary() {
       Object.keys(ZERO).forEach(k => { a[k] = (a[k]||0) + (r[k]||0); });
       return a;
     }, {...ZERO});
+    const kommentarer = g.entries.map(e => e.kommentar).filter(Boolean);
 
-    const rows = [["Stikkontakter", `${agg.stikk} stk (${agg.uttak} uttak)`]];
-    if (agg.seksveisstikk) rows.push(["Seksveisstikk",   agg.seksveisstikk+" stk"]);
+    const stikkDeler = [];
+    if (agg.stikk_enkel)  stikkDeler.push(`${agg.stikk_enkel} enkelt`);
+    if (agg.stikk_dobbel) stikkDeler.push(`${agg.stikk_dobbel} dobbelt`);
+    if (agg.stikk_fire)   stikkDeler.push(`${agg.stikk_fire} firevei`);
+    if (agg.stikk_seks)   stikkDeler.push(`${agg.stikk_seks} seksveis`);
+    const stikkStr = stikkDeler.length
+      ? stikkDeler.join(", ") + ` (${agg.uttak} uttak)`
+      : `${agg.stikk} stk (${agg.uttak} uttak)`;
+
+    const rows = [["Stikkontakter", stikkStr]];
+    if (agg.seksveisstikk) rows.push(["Seksveisstikk TV", agg.seksveisstikk+" stk"]);
     rows.push(["Sikringskurser",                          agg.kurser+" stk"]);
     if (agg.datauttak)  rows.push(["Datauttak",          agg.datauttak+" stk"]);
     if (agg.down)       rows.push(["Downlights",         agg.down+" stk"]);
@@ -823,6 +872,7 @@ function renderSummary() {
     if (agg.panel)      rows.push(["Panelovner",         agg.panel+" stk"]);
     if (agg.royk)       rows.push(["Røykvarsler",        agg.royk+" stk"]);
     if (agg.komfyrvakt) rows.push(["Komfyrvakt",        agg.komfyrvakt+" stk"]);
+    kommentarer.forEach(k => rows.push(["Kommentar", k]));
 
     const antall  = g.entries.length > 1 ? ` (${g.entries.length} like rom)` : "";
     const safeKey = key.replace(/'/g, "\\'");
@@ -839,15 +889,24 @@ function renderSummary() {
   }).join("");
 
   const tot = rooms.reduce((a,r)=>({
-    stikk:a.stikk+(r.stikk||0), kurser:a.kurser+(r.kurser||0), m2:a.m2+(r.m2||0),
-    vkabel:a.vkabel+(r.vkabel||0), vfolie:a.vfolie+(r.vfolie||0), lavkabel:a.lavkabel+(r.lavkabel||0)
-  }),{stikk:0,kurser:0,m2:0,vkabel:0,vfolie:0,lavkabel:0});
+    stikk:a.stikk+(r.stikk||0), uttak:a.uttak+(r.uttak||0), kurser:a.kurser+(r.kurser||0), m2:a.m2+(r.m2||0),
+    down:a.down+(r.down||0), lamp:a.lamp+(r.lamp||0), spot:a.spot+(r.spot||0),
+    vkabel:a.vkabel+(r.vkabel||0), vfolie:a.vfolie+(r.vfolie||0), lavkabel:a.lavkabel+(r.lavkabel||0),
+    royk:a.royk+(r.royk||0)
+  }),{stikk:0,uttak:0,kurser:0,m2:0,down:0,lamp:0,spot:0,vkabel:0,vfolie:0,lavkabel:0,royk:0});
   const varmetot = tot.vkabel+tot.vfolie+tot.lavkabel;
+  const lystot = tot.down+tot.lamp+tot.spot;
+  const totTiles = [
+    {n:rooms.length, l:"Rom"}, {n:tot.m2+" m²", l:"Areal"},
+    {n:tot.stikk, l:"Stikkontakter"}, {n:tot.uttak, l:"Uttak"},
+    {n:tot.kurser, l:"Kurser"},
+    ...(lystot>0?[{n:lystot, l:"Lyskilder"}]:[]),
+    ...(varmetot>0?[{n:varmetot+" m²", l:"Gulvvarme"}]:[]),
+    ...(tot.royk>0?[{n:tot.royk, l:"Røykvarsler"}]:[]),
+  ];
+  const totalsHtml = `<div class="sum-totals">${totTiles.map(t=>`<div class="sum-total-tile"><div class="sum-total-num">${t.n}</div><div class="sum-total-lbl">${t.l}</div></div>`).join("")}</div>`;
 
-  document.getElementById("sumContent").innerHTML = sumHtml +
-    `<div style="margin-top:12px;padding:10px 14px;background:var(--bg-sec);border-radius:var(--radius);font-size:12px;color:var(--text-muted)">
-      <strong style="color:var(--text)">Totalt:</strong> ${rooms.length} rom · ${tot.m2} m² · ${tot.stikk} stikkontakter · ${tot.kurser} kurser${varmetot>0?" · "+varmetot+" m² gulvvarme":""}
-    </div>
+  document.getElementById("sumContent").innerHTML = totalsHtml + sumHtml +
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="sum-export-btn" style="margin-top:0;flex:1" onclick="window.print()">Skriv ut / PDF</button>
       <button class="sum-export-btn" style="margin-top:0;flex:1;background:var(--green)" onclick="exportExcel()">Eksporter Excel</button>
@@ -892,6 +951,15 @@ async function redigerRom(navn) {
   // TV/seksveisstikk
   const tvCb = document.getElementById("cb-tv");
   if (tvCb) tvCb.checked = !!rom.seksveisstikk;
+
+  // Stikkontakter per type
+  if (document.getElementById("stikk-enkel"))  document.getElementById("stikk-enkel").value  = rom.stikk_enkel  || 0;
+  if (document.getElementById("stikk-dobbel")) document.getElementById("stikk-dobbel").value = rom.stikk_dobbel || 0;
+  if (document.getElementById("stikk-fire"))   document.getElementById("stikk-fire").value   = rom.stikk_fire   || 0;
+  if (document.getElementById("stikk-seks"))   document.getElementById("stikk-seks").value   = rom.stikk_seks   || 0;
+
+  // Kommentar
+  if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = rom.kommentar || "";
 
   // Avkrysningsbokser og verdier
   const feats = {data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,royk:rom.royk,komfyrvakt:rom.komfyrvakt};
