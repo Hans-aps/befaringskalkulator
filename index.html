@@ -586,7 +586,7 @@ function buildXrows() {
 
 function xrow(id, name, sub, cls) {
   return `<div class="xrow${cls?" "+cls:""}" id="xrow-${id}">
-    <label class="xhdr"><input type="checkbox" id="cb-${id}" onchange="toggleBody('${id}',this.checked)">
+    <label class="xhdr"><input type="checkbox" id="cb-${id}" onchange="toggleBody('${id}',this.checked); update();">
     <span class="xname">${name}</span></label>
     <div class="xbody" id="body-${id}">
       <div class="xrec"><span class="xrec-num" id="rec-${id}">–</span><span class="xrec-lbl">anbefalt</span></div>
@@ -724,7 +724,12 @@ function update() {
     recStikkSeks   = 0;
   }
 
-  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks};
+  // Dimmer-forslag: 1 dimmer per lysgruppe som er huket av i rommet
+  // (Downlight/Lampepunkt/Spotlight/Vegglampe/Speilbelysning teller hver som egen gruppe).
+  const lysgrupper  = ["down","lamp","spot","vegg","speil"].filter(id => getChecked(id));
+  const recDimmer   = m>0 ? lysgrupper.length : 0;
+
+  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer};
 
   function setRec(id, num, note) {
     const el = document.getElementById("rec-"+id); if (el) el.textContent = m>0 ? num : "–";
@@ -745,6 +750,9 @@ function update() {
   setRec("vegg",    recVegg||"–",  ly.vegg.n);
   setRec("speil",   1,             "IP44 min. 1 speillampe per servant.");
   setRec("bryter",  bryter||"–",   bryter>1?"2-veis bryterpar anbefalt":"Standard 1-pol bryter");
+  setRec("dimmer",  recDimmer||"–", lysgrupper.length
+    ? `1 dimmer per lysgruppe valgt i Belysning (${lysgrupper.length} valgt: ${lysgrupper.map(id=>PLURAL[id]||id).join(", ")}).`
+    : "Huk av lyspunkter under «Belysning» for forslag.");
   setRec("montvgg", recVegg||"–",  "Montering av vegglampe inkl. kabling og feste");
   setRec("monttak", recLamp||"–",  "Montering av taklampe / pendel inkl. oppheng og kabling");
   setRec("montled", m>0?recMontled+" m":"–", "Estimert lengde basert på areal – juster etter behov");
@@ -809,7 +817,7 @@ async function ferdigRom() {
     montvgg:       isPanel ? 0 : rv("montvgg",   lastRecs.recVegg),
     monttak:       isPanel ? 0 : rv("monttak",   lastRecs.recLamp),
     montled:       isPanel ? 0 : rv("montled",   lastRecs.recMontled),
-    dimmer:        isPanel ? 0 : rv("dimmer",    0),
+    dimmer:        isPanel ? 0 : rv("dimmer",    lastRecs.recDimmer),
     bryter:        isPanel ? 0 : rv("bryter",    lastRecs.bryter),
     vkabel:        isPanel ? 0 : rv("vkabel",    lastRecs.varmeRec),
     vfolie:        isPanel ? 0 : rv("vfolie",    lastRecs.varmeRec),
