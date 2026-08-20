@@ -573,14 +573,8 @@ function buildXrows() {
     xrow("stikkdobbel","Dobbelt stikkontakt",  "2 uttak") +
     xrow("stikkfire",  "Fireveis stikkontakt", "4 uttak") +
     xrow("stikkseks",  "Seksveis stikkontakt", "6 uttak");
-  ["stikkenkel","stikkdobbel","stikkfire","stikkseks"].forEach(id => {
-    const cb = document.getElementById("cb-"+id);
-    if (cb) { cb.checked = true; toggleBody(id, true); }
-  });
   document.getElementById("xrows-kurs").innerHTML =
     xrow("kurs","Sikringskurser","egen kurs per krav, jf. NEK 400");
-  const kursCb = document.getElementById("cb-kurs");
-  if (kursCb) { kursCb.checked = true; toggleBody("kurs", true); }
 
   document.getElementById("xrows-panel").innerHTML =
     PANEL_ITEMS.map(p => xrow(p.id, p.name, p.sub)).join("");
@@ -858,12 +852,6 @@ function resetRoomFields() {
   document.querySelectorAll(".xinput input[type=number]").forEach(i => i.value = "");
   if (document.getElementById("cb-tv")) document.getElementById("cb-tv").checked = false;
   if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = "";
-  const kursCb = document.getElementById("cb-kurs");
-  if (kursCb) { kursCb.checked = true; toggleBody("kurs", true); }
-  ["stikkenkel","stikkdobbel","stikkfire","stikkseks"].forEach(id => {
-    const cb = document.getElementById("cb-"+id);
-    if (cb) { cb.checked = true; toggleBody(id, true); }
-  });
   buildRoomBtns();
   selectRoom("stue");
   document.getElementById("calcContent").scrollTop = 0;
