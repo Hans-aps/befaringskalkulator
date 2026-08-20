@@ -16,7 +16,7 @@
     --green: #0F6E56; --green-light: #E1F5EE;
     --red: #A32D2D; --red-light: #FCEBEB;
     --orange: #C25A00; --orange-light: #FFF0E0;
-    --sidebar-w: 220px;
+    --sidebar-w: 320px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--text); background: var(--bg-ter); min-height: 100vh; }
@@ -58,12 +58,12 @@
   /* MAIN AREA */
   .main { display: flex; flex: 1; overflow: hidden; }
   .content { flex: 1; padding: 20px; overflow-y: auto; }
-  .summary-panel { width: 320px; min-width: 320px; background: var(--bg); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+  .summary-panel { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--bg); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; }
 
   /* NAME BAR */
   .name-bar { background: var(--bg); padding: 10px 20px 6px; display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
-  .name-bar .field { flex: 1; min-width: 160px; }
-  .name-bar .field.proj { flex: 2; min-width: 200px; }
+  .name-bar .field { flex: 0 1 240px; min-width: 160px; }
+  .name-bar .field.proj { flex: 0 1 240px; }
   .name-bar .field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
   .name-bar .field input { border: 1px solid var(--border-med); border-radius: var(--radius); padding: 0 10px; font-size: 16px; color: var(--text); background: var(--bg); width: 100%; transition: border-color .15s; box-sizing: border-box; height: 42px; }
   .name-bar .field input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
@@ -96,10 +96,6 @@
   .card.hi .card-lbl { color: var(--blue); }
   .card-note { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
 
-  /* KURS */
-  .kurs-box { display: flex; align-items: center; gap: 10px; background: var(--bg-sec); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
-  .kurs-lbl { font-size: 13px; color: var(--text-muted); }
-  .kurs-rec { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
 
   /* TV */
   .tv-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
@@ -117,7 +113,6 @@
   .xhdr:hover { background: var(--bg-sec); }
   .xhdr input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; }
   .xname { font-size: 14px; font-weight: 500; flex: 1; }
-  .xsub { font-size: 12px; color: var(--text-muted); font-weight: 400; }
   .xbody { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--bg-sec); display: none; }
   .xbody.open { display: block; }
   .xrec { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
@@ -133,8 +128,6 @@
   .kommentar-box label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); display: block; margin-bottom: 4px; }
   .kommentar-box textarea { width: 100%; border: 1px solid var(--border-med); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--text); background: var(--bg); resize: vertical; min-height: 60px; font-family: inherit; box-sizing: border-box; }
   .sum-group-total { margin-bottom: 16px; border: 1px solid var(--blue); }
-  .sum-group-total .sum-group-hdr { background: #123f6e; }
-  .sum-group-total .sum-rows { background: var(--blue-light); }
 
   /* NEK */
   .nek { border-left: 3px solid var(--blue); background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 12px; margin: 16px 0; font-size: 12px; color: var(--text-muted); }
@@ -155,13 +148,16 @@
   .sum-proj-name { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
   .sum-empty { font-size: 13px; color: var(--text-hint); text-align: center; padding: 24px 0; }
   .sum-group { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; }
-  .sum-group-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--blue); border-bottom: 1px solid var(--border); }
-  .sum-group-name { font-size: 14px; font-weight: 600; color: #fff; }
-  .sum-group-meta { font-size: 12px; color: rgba(255,255,255,.75); }
-  .sum-group-hdr .sum-edit { color: #fff; border-color: rgba(255,255,255,.5); }
-  .sum-group-hdr .sum-edit:hover { background: rgba(255,255,255,.18); border-color: #fff; }
-  .sum-group-hdr .sum-del { color: #fff; border-color: rgba(255,255,255,.5); }
-  .sum-group-hdr .sum-del:hover { background: rgba(255,255,255,.18); border-color: #fff; color: #fff; }
+  .sum-group-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-sec); border-bottom: 1px solid var(--border); }
+  .sum-group-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .sum-group-meta { font-size: 12px; color: var(--text-muted); }
+  .sum-group-total .sum-group-hdr { background: var(--blue); }
+  .sum-group-total .sum-group-name { color: #fff; }
+  .sum-group-total .sum-group-meta { color: rgba(255,255,255,.75); }
+  .sum-group-total .sum-group-hdr .sum-edit { color: #fff; border-color: rgba(255,255,255,.5); }
+  .sum-group-total .sum-group-hdr .sum-edit:hover { background: rgba(255,255,255,.18); border-color: #fff; }
+  .sum-group-total .sum-group-hdr .sum-del { color: #fff; border-color: rgba(255,255,255,.5); }
+  .sum-group-total .sum-group-hdr .sum-del:hover { background: rgba(255,255,255,.18); border-color: #fff; color: #fff; }
   .sum-del { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
   .sum-del:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
   .sum-edit { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 13px; color: var(--blue); cursor: pointer; }
@@ -181,22 +177,20 @@
   .hidden { display: none !important; }
 
   @media print {
-    .topbar, .name-bar, .sidebar, .ferdig-btn, .sum-del, .sum-export-btn, .sum-new-btn { display: none !important; }
-    .main { display: block; }
-    .content { display: none; }
+    .topbar, .name-bar, .sidebar, .right-section, .ferdig-btn, .sum-del, .sum-export-btn, .sum-new-btn { display: none !important; }
+    .body-wrap { display: block; }
     .summary-panel { width: 100%; border: none; padding: 0; }
   }
   @media (max-width: 900px) {
     .body-wrap { position: relative; }
     .sidebar { position: absolute; left: 0; top: 0; bottom: 0; z-index: 200; box-shadow: 2px 0 12px rgba(0,0,0,.15); }
     .sidebar.collapsed { width: 0; min-width: 0; box-shadow: none; }
-    .summary-panel { width: 280px; min-width: 280px; }
     .sidebar-backdrop { display: block; }
   }
   .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 199; }
   .sidebar-backdrop.hidden { display: none !important; }
   @media (max-width: 600px) {
-    .main { flex-direction: column; }
+    .body-wrap { flex-direction: column; }
     .summary-panel { width: 100%; min-width: 0; border-left: none; border-top: 1px solid var(--border); }
     .name-bar { flex-direction: column; align-items: stretch; }
     .name-bar .field { min-width: 0; }
@@ -249,63 +243,67 @@
       <div class="content" id="calcContent">
         <div class="room-btns" id="roomBtns"></div>
         <div class="active-tag">📍 Romtype: <strong id="activeRoomLabel"></strong></div>
-        <div class="field-row">
-          <div class="field"><label class="lbl">Gulvareal (m²)</label><input type="number" id="sqm" value="0" min="0" max="500" step="1" oninput="update()"></div>
-          <div class="field"><label class="lbl">Takhøyde (m)</label><input type="number" id="takhyde" value="2.4" min="2.0" max="5.0" step="0.1" oninput="update()"></div>
-          <div id="extraInputs" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"></div>
-        </div>
-        <div class="tv-row hidden" id="tvRow">
-          <input type="checkbox" id="cb-tv" onchange="update()">
-          <label for="cb-tv">TV i rommet <span class="sub">– legger til seksveisstikk (6 uttak)</span></label>
-        </div>
-        <hr class="divider">
-        <div class="sec-title">Stikkontakter</div>
-        <div id="stikk-section"></div>
-        <div class="kurs-box">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="number" id="kursInput" value="0" min="0" max="30" step="1" style="width:70px;font-size:18px;font-weight:600">
-              <div class="kurs-lbl">sikringskurser</div>
-            </div>
-            <div class="kurs-rec" id="kursRec">Fyll inn m² for anbefaling</div>
+
+        <div id="normalRoomSections">
+          <div class="field-row">
+            <div class="field"><label class="lbl">Gulvareal (m²)</label><input type="number" id="sqm" value="0" min="0" max="500" step="1" oninput="update()"></div>
+            <div class="field"><label class="lbl">Takhøyde (m)</label><input type="number" id="takhyde" value="2.4" min="2.0" max="5.0" step="0.1" oninput="update()"></div>
+            <div id="extraInputs" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"></div>
           </div>
+          <div class="tv-row hidden" id="tvRow">
+            <input type="checkbox" id="cb-tv" onchange="update()">
+            <label for="cb-tv">TV i rommet <span class="sub">– legger til seksveisstikk (6 uttak)</span></label>
+          </div>
+          <hr class="divider">
+          <div class="sec-title">Stikkontakter</div>
+          <div id="stikk-section"></div>
+
+          <div class="sec-title">Sikringskurser</div>
+          <div id="xrows-kurs"></div>
+
+          <div class="sec-title">Datauttak</div>
+          <div id="xrows-data"></div>
+
+          <div class="sec-title">Belysning</div>
+          <div id="xrows-lys"></div>
+          <div id="speilRow" style="display:none"></div>
+
+          <div class="sec-title">Montering belysning</div>
+          <div id="xrows-montering"></div>
+
+          <div class="sec-title">Lysstyring</div>
+          <div id="xrows-styring"></div>
+
+          <div class="sec-title">Oppvarmingskilde</div>
+          <div id="xrows-varme"></div>
+
+          <div class="sec-title">Sikkerhet</div>
+          <div id="xrows-sikkerhet"></div>
+
+          <div class="nek" id="nekBox"></div>
         </div>
 
-        <div class="sec-title">Datauttak</div>
-        <div id="xrows-data"></div>
+        <div id="panelSection" class="hidden">
+          <hr class="divider">
+          <div class="sec-title">Sikringsskap</div>
+          <div id="xrows-panel"></div>
+        </div>
 
-        <div class="sec-title">Belysning</div>
-        <div id="xrows-lys"></div>
-        <div id="speilRow" style="display:none"></div>
-
-        <div class="sec-title">Montering belysning</div>
-        <div id="xrows-montering"></div>
-
-        <div class="sec-title">Lysstyring</div>
-        <div id="xrows-styring"></div>
-
-        <div class="sec-title">Oppvarmingskilde</div>
-        <div id="xrows-varme"></div>
-
-        <div class="sec-title">Sikkerhet</div>
-        <div id="xrows-sikkerhet"></div>
-
-        <div class="nek" id="nekBox"></div>
         <div class="kommentar-box">
           <label for="romKommentar">Kommentar</label>
           <textarea id="romKommentar" placeholder="Evt. merknader, spesielle forhold, kundebehov..."></textarea>
         </div>
         <button class="ferdig-btn" onclick="ferdigRom()">✓ Ferdig rom – legg til oppsummering</button>
       </div>
-
-      <!-- OPPSUMMERING -->
-      <div class="summary-panel" id="sumPanel">
-        <div class="sum-title">Oppsummering</div>
-        <div class="sum-proj-name" id="sumProjName">Fyll inn prosjektnavn</div>
-        <div id="sumContent"><div class="sum-empty">Ingen rom lagt til ennå</div></div>
-      </div>
     </div>
     </div><!-- /right-section -->
+
+    <!-- OPPSUMMERING -->
+    <div class="summary-panel" id="sumPanel">
+      <div class="sum-title">Oppsummering</div>
+      <div class="sum-proj-name" id="sumProjName">Fyll inn prosjektnavn</div>
+      <div id="sumContent"><div class="sum-empty">Ingen rom lagt til ennå</div></div>
+    </div>
   </div><!-- /body-wrap -->
 </div>
 
@@ -346,15 +344,35 @@ function setFbStatus(msg, ok) {
 const ROOMS_DEF = {
   stue:     { label:"Stue",        nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>.", stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:(m)=>m>25?3:2, hasTv:true,  data:(m)=>2,  dataNote:"2 datauttak anbefalt i stue",         kurs:(m)=>Math.ceil(m/20)+1, extras:[], ip:false, hasBad:false, hasKomfyr:false, lys:{down:{per:2,n:"1 downlight per 2 m²"},lamp:{per:8,n:"1 lampepunkt per 6–10 m²"},spot:{per:4,n:"1 spotlight per 3–5 m²"},vegg:{per:10,n:"1 vegglampe per 8–12 m²"}}, varme:{panel:(m)=>Math.ceil(m/20)} },
   soverom:  { label:"Soverom",     nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>.", stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:()=>2,          hasTv:true,  data:(m)=>1,  dataNote:"1 datauttak anbefalt",                kurs:()=>1,                  extras:[], ip:false, hasBad:false, hasKomfyr:false, lys:{down:{per:2.5,n:"1 downlight per 2–3 m²"},lamp:{per:10,n:"1 lampepunkt over seng"},spot:{per:5,n:"1 spotlight per 4–6 m²"},vegg:{per:0,n:"2 vegglamper ved seng"}}, varme:{panel:(m)=>Math.ceil(m/20)} },
-  kjokken:  { label:"Kjøkken",     nek:"Min. <strong>1 uttak per fast apparat</strong> + <strong>2 uttak per 2 m benk</strong> + <strong>4 uttak</strong> ved spiseplass + min. 2 per 2 m fri vegg.", stikk:(m,ex)=>Math.ceil(((parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2)/2), uttak:(m,ex)=>(parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2, bryter:()=>1, hasTv:false, data:(m)=>1, dataNote:"1 datauttak anbefalt", kurs:(m,ex)=>Math.ceil((parseInt(ex.app)||5)/2)+2, extras:[{id:"app",label:"Faste apparater",type:"number",def:5,min:1,max:20},{id:"benk",label:"Benkemeter (m)",type:"number",def:3,min:1,max:12,step:0.5},{id:"fv",label:"Fri vegg (m)",type:"number",def:2,min:0,max:10,step:0.5},{id:"spl",label:"Spiseplass?",type:"select",opts:[{v:"0",l:"Nei"},{v:"1",l:"Ja (+4)"}],def:"0"}], ip:false, hasBad:false, hasKomfyr:true, lys:{down:{per:1.5,n:"1 downlight per 1–2 m²"},lamp:{per:0,n:"Lampepunkt over spisebord"},spot:{per:3,n:"1 spotlight per 2–3 m²"},vegg:{per:0,n:"Vegglampe ved spiseplass"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
+  kjokken:  { label:"Kjøkken",     nek:"Min. <strong>1 uttak per fast apparat</strong> + <strong>2 uttak per 2 m benk</strong> + <strong>4 uttak</strong> ved spiseplass + min. 2 per 2 m fri vegg.", stikk:(m,ex)=>Math.ceil(((parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2)/2), uttak:(m,ex)=>(parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2, bryter:()=>1, hasTv:false, data:(m)=>1, dataNote:"1 datauttak anbefalt", kurs:(m,ex)=>Math.ceil((parseInt(ex.app)||5)/2)+2, extras:[{id:"app",label:"Faste apparater",type:"number",def:5,min:1,max:20},{id:"benk",label:"Benkemeter (m)",type:"number",def:3,min:1,max:12,step:0.5},{id:"fv",label:"Fri vegg (m)",type:"number",def:2,min:0,max:10,step:0.5},{id:"spl",label:"Spiseplass?",type:"select",opts:[{v:"0",l:"Nei"},{v:"1",l:"Ja (+4)"}],def:"0"}],
+    stikkSplit:(m,ex)=>({ enkel:(parseInt(ex.app)||5), dobbel:Math.ceil((parseFloat(ex.benk)||3)/2)+Math.ceil((parseFloat(ex.fv)||2)/2), fire:ex.spl==="1"?1:0, seks:0 }),
+    ip:false, hasBad:false, hasKomfyr:true, lys:{down:{per:1.5,n:"1 downlight per 1–2 m²"},lamp:{per:0,n:"Lampepunkt over spisebord"},spot:{per:3,n:"1 spotlight per 2–3 m²"},vegg:{per:0,n:"Vegglampe ved spiseplass"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
   bad:      { label:"Bad/WC",      nek:"Min. <strong>2 uttak (1 dobbel)</strong> – under 3 m² godtas 1 uttak. Kun sone 3 (>60 cm fra vann).", stikk:(m)=>1, uttak:(m)=>m<3?1:2, bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig på bad", kurs:(m)=>Math.ceil(m/6)+1, extras:[], ip:true, hasBad:true, hasKomfyr:false, lys:{down:{per:1.5,n:"IP44/65. 1 per 1–2 m²"},lamp:{per:0,n:"Taklampe IP44"},spot:{per:3,n:"IP44-spotlight"},vegg:{per:0,n:"Veggarmatur IP44"}}, varme:{panel:null} },
   gang:     { label:"Entré/gang",  nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 6 m²</strong>.", stikk:(m)=>Math.ceil(m/6), uttak:(m)=>Math.ceil(m/6)*2, bryter:(m)=>Math.max(2,Math.ceil(m/5)), hasTv:false, data:()=>0, dataNote:"Datauttak sjelden nødvendig", kurs:()=>1, extras:[], ip:false, hasBad:false, hasKomfyr:false, lys:{down:{per:1.8,n:"1 downlight per 1,5–2 m²"},lamp:{per:6,n:"1 lampepunkt per 4–8 m²"},spot:{per:4,n:"1 spotlight per 3–5 m²"},vegg:{per:5,n:"1 vegglampe per 4–6 m²"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
   garasje:  { label:"Garasje/bod", nek:"Tilpasses funksjon – <strong>minimum 2 uttak (1 dobbel)</strong>.", stikk:(m)=>Math.max(1,Math.ceil(m/8)), uttak:(m)=>Math.max(2,Math.ceil(m/8)*2), bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak valgfritt", kurs:(m)=>Math.ceil(m/25)+1, extras:[], ip:true, hasBad:false, hasKomfyr:false, lys:{down:{per:3,n:"IP44. 1 per 3–4 m²"},lamp:{per:0,n:"Takarmatur – 1 per 8–12 m²"},spot:{per:5,n:"1 spotlight over arbeidsbenk"},vegg:{per:0,n:"Veggarmatur ved inngang"}}, varme:{panel:(m)=>Math.ceil(m/25)} },
   utvendig: { label:"Utvendig",    nek:"Min. <strong>2 uttak (1 dobbel)</strong> på alle verandaer, altaner og balkonger.", stikk:(m)=>Math.max(1,Math.ceil(m/10)), uttak:(m)=>Math.max(2,Math.ceil(m/10)*2), bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig", kurs:()=>1, extras:[], ip:true, hasBad:false, hasKomfyr:false, lys:{down:{per:3,n:"IP65. 1 per 2–4 m²"},lamp:{per:0,n:"Veggarmatur ved dør"},spot:{per:5,n:"IP65 spotlight"},vegg:{per:0,n:"Veggarmatur IP65"}}, varme:{panel:null} }
 };
 
+// ─── SIKRINGSSKAP (egen fane, ikke et vanlig rom) ────────────────────────────
+const PANEL_ITEMS = [
+  {id:"jordfeil",   name:"Jordfeilautomat",                sub:"type A/B per kursgruppe",                   plural:"jordfeilautomater"},
+  {id:"ov",         name:"Overspenningsvern (OV)",         sub:"type 1/2 kombinert vern",                   plural:"overspenningsvern"},
+  {id:"malerplass", name:"Sikringsskap med målerplass",    sub:"plass til strømmåler i skapet",             plural:"målerplasser"},
+  {id:"svakstrom",  name:"Sikringsskap med svakstrømsfelt",sub:"eget felt for tele/data/alarm",             plural:"svakstrømsfelt"},
+  {id:"innfelt",    name:"Sikringsskap innfelt",           sub:"montert i vegg",                            plural:"innfelte skap"},
+  {id:"utenpa",     name:"Sikringsskap utenpåliggende",    sub:"montert utenpå vegg",                       plural:"utenpåliggende skap"},
+  {id:"tks",        name:"TKS",                            sub:"teknisk kabelskap for tele/data",           plural:"TKS-skap"},
+  {id:"tilforsel",  name:"Ny tilførsel",                   sub:"ny hovedkabel/stigekabel fra nettselskap",  plural:"nye tilførsler"}
+];
+
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let state = { rooms: [], projNavn: "" };
+
+const safeLS = {
+  get(key)      { try { return localStorage.getItem(key); }    catch(e) { return null; } },
+  set(key, val) { try { localStorage.setItem(key, val); }      catch(e) {} },
+  remove(key)   { try { localStorage.removeItem(key); }        catch(e) {} }
+};
 let curRoom = "stue";
 let lastRecs = {};
 let projDebounce = null;
@@ -416,7 +434,7 @@ async function deleteProject(navn) {
     if (state.projNavn === navn) {
       state.rooms = [];
       state.projNavn = "";
-      localStorage.removeItem("befaring_projNavn");
+      safeLS.remove("befaring_projNavn");
       document.getElementById("projNavn").value = "";
       document.getElementById("projHint").textContent = "Skriv prosjektnavn for å laste eller starte prosjekt";
       renderSummary();
@@ -433,7 +451,7 @@ async function deleteProject(navn) {
 async function loadProject(navn) {
   document.getElementById("projNavn").value = navn;
   state.projNavn = navn;
-  localStorage.setItem("befaring_projNavn", navn);
+  safeLS.set("befaring_projNavn", navn);
   document.getElementById("projHint").textContent = "Laster...";
   state.rooms = [];
   await loadRoomsFromFirebase(navn);
@@ -490,7 +508,7 @@ async function deleteRoomsFromFirebase(ids) {
 function onProjNameChange() {
   const val = document.getElementById("projNavn").value;
   state.projNavn = val;
-  localStorage.setItem("befaring_projNavn", val);
+  safeLS.set("befaring_projNavn", val);
   renderSummary();
   const lagreBtn = document.getElementById("lagreBtn");
   if (lagreBtn) lagreBtn.disabled = val.trim().length < 2;
@@ -518,7 +536,7 @@ async function lagreProsjekt() {
   try {
     // Rooms are already saved individually – this just confirms and refreshes
     state.projNavn = projNavn;
-    localStorage.setItem("befaring_projNavn", projNavn);
+    safeLS.set("befaring_projNavn", projNavn);
     await loadProjectList();
     showToast(`✓ Prosjekt "${projNavn}" lagret`);
   } finally {
@@ -555,12 +573,27 @@ function buildXrows() {
     xrow("stikkdobbel","Dobbelt stikkontakt",  "2 uttak") +
     xrow("stikkfire",  "Fireveis stikkontakt", "4 uttak") +
     xrow("stikkseks",  "Seksveis stikkontakt", "6 uttak");
+  ["stikkenkel","stikkdobbel","stikkfire","stikkseks"].forEach(id => {
+    const cb = document.getElementById("cb-"+id);
+    if (cb) { cb.checked = true; toggleBody(id, true); }
+  });
+  document.getElementById("xrows-kurs").innerHTML =
+    xrow("kurs","Sikringskurser","egen kurs per krav, jf. NEK 400");
+  const kursCb = document.getElementById("cb-kurs");
+  if (kursCb) { kursCb.checked = true; toggleBody("kurs", true); }
+
+  document.getElementById("xrows-panel").innerHTML =
+    PANEL_ITEMS.map(p => xrow(p.id, p.name, p.sub)).join("");
+  PANEL_ITEMS.forEach(p => {
+    const rc = document.getElementById("rec-"+p.id); if (rc) rc.textContent = "1";
+    const nt = document.getElementById("note-"+p.id); if (nt) nt.textContent = "Huk av og juster antall ved behov.";
+  });
 }
 
 function xrow(id, name, sub, cls) {
   return `<div class="xrow${cls?" "+cls:""}" id="xrow-${id}">
     <label class="xhdr"><input type="checkbox" id="cb-${id}" onchange="toggleBody('${id}',this.checked)">
-    <span class="xname">${name} <span class="xsub">– ${sub}</span></span></label>
+    <span class="xname">${name}</span></label>
     <div class="xbody" id="body-${id}">
       <div class="xrec"><span class="xrec-num" id="rec-${id}">–</span><span class="xrec-lbl">anbefalt</span></div>
       <div class="xnote" id="note-${id}"></div>
@@ -576,24 +609,33 @@ const PLURAL = {
   montvgg:"stk (vegglampe)", monttak:"stk (taklampe)", montled:"m ledstrip",
   royk:"røykvarsler", komfyrvakt:"komfyrvakter",
   stikkenkel:"enkle stikkontakter", stikkdobbel:"dobbeltstikkontakter",
-  stikkfire:"fireveisstikkontakter", stikkseks:"seksveisstikkontakter"
+  stikkfire:"fireveisstikkontakter", stikkseks:"seksveisstikkontakter",
+  kurs:"sikringskurser"
 };
+PANEL_ITEMS.forEach(p => { PLURAL[p.id] = p.plural; });
 function pluralLabel(id) { return PLURAL[id]||id; }
 function toggleBody(id, open) { document.getElementById("body-"+id)?.classList.toggle("open", open); }
 
 // ─── ROOM BUTTONS ────────────────────────────────────────────────────────────
 function buildRoomBtns() {
-  document.getElementById("roomBtns").innerHTML =
-    Object.entries(ROOMS_DEF).map(([k,r])=>
+  const roomButtons = Object.entries(ROOMS_DEF).map(([k,r])=>
       `<button class="room-btn${k===curRoom?" active":""}" data-room="${k}" onclick="selectRoom('${k}')">${r.label}</button>`
     ).join("");
-  document.getElementById("activeRoomLabel").textContent = ROOMS_DEF[curRoom].label;
+  const panelButton = `<button class="room-btn${curRoom==="sikringsskap"?" active":""}" data-room="sikringsskap" onclick="selectRoom('sikringsskap')">Sikringsskap</button>`;
+  document.getElementById("roomBtns").innerHTML = roomButtons + panelButton;
+  document.getElementById("activeRoomLabel").textContent = curRoom==="sikringsskap" ? "Sikringsskap" : ROOMS_DEF[curRoom].label;
 }
 
 function selectRoom(room) {
   curRoom = room;
   document.querySelectorAll(".room-btn").forEach(b => b.classList.toggle("active", b.dataset.room === room));
-  document.getElementById("activeRoomLabel").textContent = ROOMS_DEF[room].label;
+  const isPanel = room === "sikringsskap";
+  document.getElementById("activeRoomLabel").textContent = isPanel ? "Sikringsskap" : ROOMS_DEF[room].label;
+  document.getElementById("normalRoomSections")?.classList.toggle("hidden", isPanel);
+  document.getElementById("panelSection")?.classList.toggle("hidden", !isPanel);
+
+  if (isPanel) { update(); return; }
+
   const r = ROOMS_DEF[room];
 
   document.getElementById("tvRow")?.classList.toggle("hidden", !r.hasTv);
@@ -644,6 +686,7 @@ function getValOrRec(id, rec) {
 
 // ─── UPDATE ──────────────────────────────────────────────────────────────────
 function update() {
+  if (curRoom === "sikringsskap") return;
   const m  = parseFloat(document.getElementById("sqm")?.value) || 0;
   const h  = parseFloat(document.getElementById("takhyde")?.value) || 2.4;
   const r  = ROOMS_DEF[curRoom];
@@ -668,26 +711,38 @@ function update() {
   const recMontled = m > 0 ? Math.round(Math.sqrt(m)*2) : 0;
   const recRoyk    = m > 0 ? Math.max(1, Math.ceil(m/60)) : 0;
 
-  // Stikkontakt-forslag: NEK-kravet dekkes av dobbeltstikk, TV gir seksveis
-  const recStikkSeks   = hasTv ? 1 : 0;
-  const recStikkFire   = m>0 && stikk >= 6 ? 1 : 0;
-  const recStikkDobbel = m>0 ? Math.max(0, stikk - recStikkSeks*3 - recStikkFire*2) : 0;
-  const recStikkEnkel  = 0;
+  // Stikkontakt-forslag: fordeles på enkelt/dobbelt/firevei ut fra hva uttakene
+  // faktisk skal brukes til (rom med egen stikkSplit, f.eks. kjøkken der faste
+  // apparater skal ha eget enkeltuttak). Andre rom: NEK-kravet dekkes av
+  // dobbeltstikk, med ett enkeltstikk ved et evt. oddetalls-uttak.
+  // TV/AV-punktet er et eget felt (seksveisstikk) og teller IKKE med her.
+  let recStikkEnkel, recStikkDobbel, recStikkFire, recStikkSeks;
+  if (m>0 && typeof r.stikkSplit === "function") {
+    const split = r.stikkSplit(m, ex);
+    recStikkEnkel  = split.enkel  || 0;
+    recStikkDobbel = split.dobbel || 0;
+    recStikkFire   = split.fire   || 0;
+    recStikkSeks   = split.seks   || 0;
+  } else {
+    recStikkEnkel  = m>0 ? (uttak % 2) : 0;
+    recStikkDobbel = m>0 ? Math.floor((uttak - recStikkEnkel) / 2) : 0;
+    recStikkFire   = 0;
+    recStikkSeks   = 0;
+  }
 
   lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks};
-
-  if (document.getElementById("kursInput")) document.getElementById("kursInput").value = totKurs;
-  if (document.getElementById("kursRec")) document.getElementById("kursRec").textContent = m>0 ? "Anbefalt: "+totKurs : "Fyll inn m² for anbefaling";
 
   function setRec(id, num, note) {
     const el = document.getElementById("rec-"+id); if (el) el.textContent = m>0 ? num : "–";
     const ne = document.getElementById("note-"+id); if (ne) ne.innerHTML = note;
   }
 
-  setRec("stikkenkel",  recStikkEnkel||"–",  "Brukes ved enkeltapparater der dobbelt ikke får plass.");
-  setRec("stikkdobbel", recStikkDobbel||"–", m>0?`<strong>NEK 400: ${stikk} stk (${uttak} uttak)</strong> – 2 uttak per påbegynte areal.`:"Fyll inn m².");
-  setRec("stikkfire",   recStikkFire||"–",   "Praktisk ved arbeidsplass/kontorpult – erstatter 2 dobbeltstikk.");
-  setRec("stikkseks",   recStikkSeks||"–",   hasTv?"TV/AV-plass – 6 uttak samlet.":"Huk av «TV i rommet» for forslag.");
+  setRec("kurs", totKurs||"–", m>0?`<strong>Anbefalt: ${totKurs} kurser</strong>${hasTv?" (inkl. 1 egen kurs for TV/AV-uttak)":""} – jf. NEK 400.`:"Fyll inn m² for anbefaling.");
+
+  setRec("stikkenkel",  recStikkEnkel||"–",  m>0?`Dekker et evt. oddetalls-uttak i NEK-kravet (${uttak} uttak totalt).`:"Fyll inn m².");
+  setRec("stikkdobbel", recStikkDobbel||"–", m>0?`<strong>NEK 400 krever ${uttak} uttak totalt</strong> i rommet – 2 uttak per påbegynte areal.`:"Fyll inn m².");
+  setRec("stikkfire",   recStikkFire||"–",   "Praktisk ved arbeidsplass/kontorpult – kan erstatte 2 dobbeltstikk ved behov.");
+  setRec("stikkseks",   recStikkSeks||"–",   "Ved eget behov for samlet 6-uttak. TV-punkt dekkes separat under «TV i rommet».");
 
   setRec("data",    dataRec,       r.dataNote);
   setRec("down",    recDown||"–",  ly.down.n);
@@ -720,22 +775,22 @@ function update() {
 async function ferdigRom() {
   const projNavn   = document.getElementById("projNavn").value.trim();
   const romNavnRaw = document.getElementById("romNavn").value.trim();
-  const romNavn    = romNavnRaw || ROOMS_DEF[curRoom].label;
-  const m          = parseFloat(document.getElementById("sqm")?.value) || 0;
-  const r          = ROOMS_DEF[curRoom];
-  const ex         = getEx(curRoom);
-  const hasTv      = r.hasTv && getChecked("tv");
-  const kursVal    = parseInt(document.getElementById("kursInput")?.value) || 0;
+  const isPanel    = curRoom === "sikringsskap";
+  const romNavn    = romNavnRaw || (isPanel ? "Sikringsskap" : ROOMS_DEF[curRoom].label);
+  const m          = isPanel ? 0 : (parseFloat(document.getElementById("sqm")?.value) || 0);
+  const r          = isPanel ? null : ROOMS_DEF[curRoom];
+  const ex         = isPanel ? {} : getEx(curRoom);
+  const hasTv      = !isPanel && r.hasTv && getChecked("tv");
 
   function rv(id, rec) {
     if (!getChecked(id)) return 0;
     return Math.round(getValOrRec(id, rec));
   }
 
-  const stEnkel  = rv("stikkenkel",  lastRecs.recStikkEnkel);
-  const stDobbel = rv("stikkdobbel", lastRecs.recStikkDobbel);
-  const stFire   = rv("stikkfire",   lastRecs.recStikkFire);
-  const stSeks   = rv("stikkseks",   lastRecs.recStikkSeks);
+  const stEnkel  = isPanel ? 0 : rv("stikkenkel",  lastRecs.recStikkEnkel);
+  const stDobbel = isPanel ? 0 : rv("stikkdobbel", lastRecs.recStikkDobbel);
+  const stFire   = isPanel ? 0 : rv("stikkfire",   lastRecs.recStikkFire);
+  const stSeks   = isPanel ? 0 : rv("stikkseks",   lastRecs.recStikkSeks);
 
   const rom = {
     projNavn,
@@ -748,26 +803,34 @@ async function ferdigRom() {
     stikk_dobbel:  stDobbel,
     stikk_fire:    stFire,
     stikk_seks:    stSeks,
-    kurser:        kursVal,
+    kurser:        isPanel ? 0 : rv("kurs", lastRecs.kursRec),
     seksveisstikk: hasTv ? 1 : 0,
     kommentar:     document.getElementById("romKommentar")?.value.trim() || "",
-    datauttak:     rv("data",      lastRecs.dataRec),
-    down:          rv("down",      lastRecs.recDown),
-    lamp:          rv("lamp",      lastRecs.recLamp),
-    spot:          rv("spot",      lastRecs.recSpot),
-    vegg:          rv("vegg",      lastRecs.recVegg),
-    speil:         rv("speil",     1),
-    montvgg:       rv("montvgg",   lastRecs.recVegg),
-    monttak:       rv("monttak",   lastRecs.recLamp),
-    montled:       rv("montled",   lastRecs.recMontled),
-    dimmer:        rv("dimmer",    0),
-    bryter:        rv("bryter",    lastRecs.bryter),
-    vkabel:        rv("vkabel",    lastRecs.varmeRec),
-    vfolie:        rv("vfolie",    lastRecs.varmeRec),
-    lavkabel:      rv("lavkabel",  lastRecs.varmeRec),
-    panel:         rv("panel",     lastRecs.panelRec),
-    royk:          rv("royk",      lastRecs.recRoyk),
-    komfyrvakt:    rv("komfyrvakt",1)
+    datauttak:     isPanel ? 0 : rv("data",      lastRecs.dataRec),
+    down:          isPanel ? 0 : rv("down",      lastRecs.recDown),
+    lamp:          isPanel ? 0 : rv("lamp",      lastRecs.recLamp),
+    spot:          isPanel ? 0 : rv("spot",      lastRecs.recSpot),
+    vegg:          isPanel ? 0 : rv("vegg",      lastRecs.recVegg),
+    speil:         isPanel ? 0 : rv("speil",     1),
+    montvgg:       isPanel ? 0 : rv("montvgg",   lastRecs.recVegg),
+    monttak:       isPanel ? 0 : rv("monttak",   lastRecs.recLamp),
+    montled:       isPanel ? 0 : rv("montled",   lastRecs.recMontled),
+    dimmer:        isPanel ? 0 : rv("dimmer",    0),
+    bryter:        isPanel ? 0 : rv("bryter",    lastRecs.bryter),
+    vkabel:        isPanel ? 0 : rv("vkabel",    lastRecs.varmeRec),
+    vfolie:        isPanel ? 0 : rv("vfolie",    lastRecs.varmeRec),
+    lavkabel:      isPanel ? 0 : rv("lavkabel",  lastRecs.varmeRec),
+    panel:         isPanel ? 0 : rv("panel",     lastRecs.panelRec),
+    royk:          isPanel ? 0 : rv("royk",      lastRecs.recRoyk),
+    komfyrvakt:    isPanel ? 0 : rv("komfyrvakt",1),
+    panel_jordfeil:   rv("jordfeil",   1),
+    panel_ov:         rv("ov",         1),
+    panel_malerplass: rv("malerplass", 1),
+    panel_svakstrom:  rv("svakstrom",  1),
+    panel_innfelt:    rv("innfelt",    1),
+    panel_utenpa:     rv("utenpa",     1),
+    panel_tks:        rv("tks",        1),
+    panel_tilforsel:  rv("tilforsel",  1)
   };
 
   const btn = document.querySelector(".ferdig-btn");
@@ -795,10 +858,14 @@ function resetRoomFields() {
   document.querySelectorAll(".xinput input[type=number]").forEach(i => i.value = "");
   if (document.getElementById("cb-tv")) document.getElementById("cb-tv").checked = false;
   if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = "";
-  curRoom = "stue";
+  const kursCb = document.getElementById("cb-kurs");
+  if (kursCb) { kursCb.checked = true; toggleBody("kurs", true); }
+  ["stikkenkel","stikkdobbel","stikkfire","stikkseks"].forEach(id => {
+    const cb = document.getElementById("cb-"+id);
+    if (cb) { cb.checked = true; toggleBody(id, true); }
+  });
   buildRoomBtns();
-  renderExtras("stue");
-  update();
+  selectRoom("stue");
   document.getElementById("calcContent").scrollTop = 0;
   document.getElementById("romNavn").focus();
 }
@@ -830,28 +897,32 @@ function renderSummary() {
     grouped[key].entries.push(rom);
   });
 
-  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,royk:0,komfyrvakt:0};
+  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,royk:0,komfyrvakt:0,
+    panel_jordfeil:0,panel_ov:0,panel_malerplass:0,panel_svakstrom:0,panel_innfelt:0,panel_utenpa:0,panel_tks:0,panel_tilforsel:0};
 
   const sumHtml = order.map(key => {
     const g = grouped[key];
+    const isPanelGroup = g.entries.every(e => e.romtype === "sikringsskap");
     const agg = g.entries.reduce((a, r) => {
       Object.keys(ZERO).forEach(k => { a[k] = (a[k]||0) + (r[k]||0); });
       return a;
     }, {...ZERO});
     const kommentarer = g.entries.map(e => e.kommentar).filter(Boolean);
 
-    const stikkDeler = [];
-    if (agg.stikk_enkel)  stikkDeler.push(`${agg.stikk_enkel} enkelt`);
-    if (agg.stikk_dobbel) stikkDeler.push(`${agg.stikk_dobbel} dobbelt`);
-    if (agg.stikk_fire)   stikkDeler.push(`${agg.stikk_fire} firevei`);
-    if (agg.stikk_seks)   stikkDeler.push(`${agg.stikk_seks} seksveis`);
-    const stikkStr = stikkDeler.length
-      ? stikkDeler.join(", ") + ` (${agg.uttak} uttak)`
-      : `${agg.stikk} stk (${agg.uttak} uttak)`;
-
-    const rows = [["Stikkontakter", stikkStr]];
-    if (agg.seksveisstikk) rows.push(["Seksveisstikk TV", agg.seksveisstikk+" stk"]);
-    rows.push(["Sikringskurser",                          agg.kurser+" stk"]);
+    const rows = [];
+    if (!isPanelGroup) {
+      const stikkDeler = [];
+      if (agg.stikk_enkel)  stikkDeler.push(`${agg.stikk_enkel} enkelt`);
+      if (agg.stikk_dobbel) stikkDeler.push(`${agg.stikk_dobbel} dobbelt`);
+      if (agg.stikk_fire)   stikkDeler.push(`${agg.stikk_fire} firevei`);
+      if (agg.stikk_seks)   stikkDeler.push(`${agg.stikk_seks} seksveis`);
+      const stikkStr = stikkDeler.length
+        ? stikkDeler.join(", ") + ` (${agg.uttak} uttak)`
+        : `${agg.stikk} stk (${agg.uttak} uttak)`;
+      rows.push(["Stikkontakter", stikkStr]);
+      if (agg.seksveisstikk) rows.push(["Seksveisstikk TV", agg.seksveisstikk+" stk"]);
+      rows.push(["Sikringskurser",                          agg.kurser+" stk"]);
+    }
     if (agg.datauttak)  rows.push(["Datauttak",          agg.datauttak+" stk"]);
     if (agg.down)       rows.push(["Downlights",         agg.down+" stk"]);
     if (agg.lamp)       rows.push(["Lampepunkter",       agg.lamp+" stk"]);
@@ -869,13 +940,14 @@ function renderSummary() {
     if (agg.panel)      rows.push(["Panelovner",         agg.panel+" stk"]);
     if (agg.royk)       rows.push(["Røykvarsler",        agg.royk+" stk"]);
     if (agg.komfyrvakt) rows.push(["Komfyrvakt",        agg.komfyrvakt+" stk"]);
+    PANEL_ITEMS.forEach(p => { if (agg["panel_"+p.id]) rows.push([p.name, agg["panel_"+p.id]+" stk"]); });
     kommentarer.forEach(k => rows.push(["Kommentar", k]));
 
     const antall  = g.entries.length > 1 ? ` (${g.entries.length} like rom)` : "";
     const safeKey = key.replace(/'/g, "\\'");
     return `<div class="sum-group">
       <div class="sum-group-hdr">
-        <div><div class="sum-group-name">${key}${antall}</div><div class="sum-group-meta">${agg.m2} m²</div></div>
+        <div><div class="sum-group-name">${key}${antall}</div>${isPanelGroup?"":`<div class="sum-group-meta">${agg.m2} m²</div>`}</div>
         <div style="display:flex;gap:6px">
           <button class="sum-edit" onclick="redigerRom('${safeKey}')">Rediger</button>
           <button class="sum-del" onclick="deleteGroup('${safeKey}')">Slett</button>
@@ -919,6 +991,7 @@ function renderSummary() {
   if (tot.panel)      totRows.push(["Panelovner",         tot.panel+" stk"]);
   if (tot.royk)       totRows.push(["Røykvarsler",        tot.royk+" stk"]);
   if (tot.komfyrvakt) totRows.push(["Komfyrvakt",         tot.komfyrvakt+" stk"]);
+  PANEL_ITEMS.forEach(p => { if (tot["panel_"+p.id]) totRows.push([p.name, tot["panel_"+p.id]+" stk"]); });
 
   const totalsHtml = `<div class="sum-group sum-group-total">
     <div class="sum-group-hdr">
@@ -939,8 +1012,8 @@ function exportExcel() {
   const rooms = state.rooms;
   if (!rooms.length) { showToast("Ingen rom å eksportere", true); return; }
 
-  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Røykvarsler","Komfyrvakt"];
-  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.royk,r.komfyrvakt].map(v => v == null ? "" : v));
+  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
+  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.royk,r.komfyrvakt, ...PANEL_ITEMS.map(p=>r["panel_"+p.id])].map(v => v == null ? "" : v));
 
   const csv = [cols, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
   const bom = "﻿";
@@ -967,7 +1040,6 @@ async function redigerRom(navn) {
   selectRoom(rom.romtype);
   document.getElementById("romNavn").value = rom.navn;
   document.getElementById("sqm").value = rom.m2 || 0;
-  if (document.getElementById("kursInput")) document.getElementById("kursInput").value = rom.kurser || 0;
 
   // TV/seksveisstikk
   const tvCb = document.getElementById("cb-tv");
@@ -977,7 +1049,8 @@ async function redigerRom(navn) {
   if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = rom.kommentar || "";
 
   // Avkrysningsbokser og verdier
-  const feats = {stikkenkel:rom.stikk_enkel,stikkdobbel:rom.stikk_dobbel,stikkfire:rom.stikk_fire,stikkseks:rom.stikk_seks,data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,royk:rom.royk,komfyrvakt:rom.komfyrvakt};
+  const feats = {kurs:rom.kurser,stikkenkel:rom.stikk_enkel,stikkdobbel:rom.stikk_dobbel,stikkfire:rom.stikk_fire,stikkseks:rom.stikk_seks,data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,royk:rom.royk,komfyrvakt:rom.komfyrvakt,
+    jordfeil:rom.panel_jordfeil,ov:rom.panel_ov,malerplass:rom.panel_malerplass,svakstrom:rom.panel_svakstrom,innfelt:rom.panel_innfelt,utenpa:rom.panel_utenpa,tks:rom.panel_tks,tilforsel:rom.panel_tilforsel};
   Object.entries(feats).forEach(([id, v]) => {
     const cb = document.getElementById("cb-"+id);
     const body = document.getElementById("body-"+id);
@@ -1005,7 +1078,7 @@ async function startNytt() {
   if (harUlagret && !confirm("Ulagrede endringer vil forsvinne. Vil du fortsette?")) return;
   state.rooms = [];
   state.projNavn = "";
-  localStorage.removeItem("befaring_projNavn");
+  safeLS.remove("befaring_projNavn");
   document.getElementById("projNavn").value = "";
   document.getElementById("projHint").textContent = "Skriv prosjektnavn for å laste eller starte prosjekt";
   renderSummary();
@@ -1025,7 +1098,7 @@ async function init() {
   update();
   document.getElementById("tvRow")?.classList.add("hidden");
 
-  const savedProj = localStorage.getItem("befaring_projNavn") || "";
+  const savedProj = safeLS.get("befaring_projNavn") || "";
   if (savedProj) {
     state.projNavn = savedProj;
     document.getElementById("projNavn").value = savedProj;
