@@ -564,7 +564,8 @@ function buildXrows() {
     xrow("vkabel","Varmekabel","anbefalt: hele gulvarealet") +
     xrow("vfolie","Varmefolie","anbefalt: hele gulvarealet") +
     xrow("lavkabel","Lavtbyggende varmekabel","anbefalt: hele gulvarealet") +
-    xrow("panel","Panelovn","veggmontert varmeovn");
+    xrow("panel","Panelovn","veggmontert varmeovn") +
+    xrow("termostat","Termostat","styrer gulvvarme");
   document.getElementById("xrows-sikkerhet").innerHTML =
     xrow("royk","Røykvarsler","optisk eller ionisasjon") +
     xrow("komfyrvakt","Komfyrvakt","automatisk av ved varme eller fravær");
@@ -599,7 +600,7 @@ function xrow(id, name, sub, cls) {
 const PLURAL = {
   data:"datauttak", down:"downlights", lamp:"lampepunkter", spot:"spotlights",
   vegg:"vegglamper", speil:"speillamper", dimmer:"dimmere", bryter:"brytere",
-  vkabel:"m² varmekabel", vfolie:"m² varmefolie", lavkabel:"m² lavtbyggende kabel", panel:"panelovner",
+  vkabel:"m² varmekabel", vfolie:"m² varmefolie", lavkabel:"m² lavtbyggende kabel", panel:"panelovner", termostat:"termostater",
   montvgg:"stk (vegglampe)", monttak:"stk (taklampe)", montled:"m ledstrip",
   royk:"røykvarsler", komfyrvakt:"komfyrvakter",
   stikkenkel:"enkle stikkontakter", stikkdobbel:"dobbeltstikkontakter",
@@ -729,7 +730,13 @@ function update() {
   const lysgrupper  = ["down","lamp","spot","vegg","speil"].filter(id => getChecked(id));
   const recDimmer   = m>0 ? lysgrupper.length : 0;
 
-  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer};
+  // Termostat-forslag: 1 termostat per valgt gulvvarmetype (varmekabel/varmefolie/
+  // lavtbyggende varmekabel) – hver styres normalt av sin egen termostat.
+  // Panelovn har egen innebygd termostat og teller ikke med her.
+  const varmetyper  = ["vkabel","vfolie","lavkabel"].filter(id => getChecked(id));
+  const recTermostat = m>0 ? varmetyper.length : 0;
+
+  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer,recTermostat};
 
   function setRec(id, num, note) {
     const el = document.getElementById("rec-"+id); if (el) el.textContent = m>0 ? num : "–";
@@ -762,6 +769,9 @@ function update() {
   setRec("vfolie",     m>0?m+" m²":"–", varmeNote);
   setRec("lavkabel",   m>0?m+" m²":"–", varmeNote);
   setRec("panel",      panelRec||"–", r.varme.panel&&m>0?`${panelRec} stk – ca. ${Math.round(m*35)} W (35 W/m²). Eget 16A kurs per ovn.`:"Ikke vanlig for dette rommet.");
+  setRec("termostat",  recTermostat||"–", varmetyper.length
+    ? `1 termostat per gulvvarmetype valgt (${varmetyper.length} valgt: ${varmetyper.map(id=>PLURAL[id]||id).join(", ")}). Panelovn har egen innebygd termostat.`
+    : "Huk av varmekabel/varmefolie/lavtbyggende kabel for forslag.");
   setRec("royk",       recRoyk||"–", m>0?`<strong>Min. 1 per 60 m²</strong> – alltid 1 per etasje jf. TEK17. Anbefalt: ${recRoyk} stk.`:"Fyll inn m².");
   setRec("komfyrvakt", 1, "<strong>1 komfyrvakt per komfyr</strong> – anbefalt av Norsk brannvernforening. Monteres over komfyr.");
 
@@ -823,6 +833,7 @@ async function ferdigRom() {
     vfolie:        isPanel ? 0 : rv("vfolie",    lastRecs.varmeRec),
     lavkabel:      isPanel ? 0 : rv("lavkabel",  lastRecs.varmeRec),
     panel:         isPanel ? 0 : rv("panel",     lastRecs.panelRec),
+    termostat:     isPanel ? 0 : rv("termostat", lastRecs.recTermostat),
     royk:          isPanel ? 0 : rv("royk",      lastRecs.recRoyk),
     komfyrvakt:    isPanel ? 0 : rv("komfyrvakt",1),
     panel_jordfeil:   rv("jordfeil",   1),
@@ -893,7 +904,7 @@ function renderSummary() {
     grouped[key].entries.push(rom);
   });
 
-  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,royk:0,komfyrvakt:0,
+  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,termostat:0,royk:0,komfyrvakt:0,
     panel_jordfeil:0,panel_ov:0,panel_malerplass:0,panel_svakstrom:0,panel_innfelt:0,panel_utenpa:0,panel_tks:0,panel_tilforsel:0};
 
   const sumHtml = order.map(key => {
@@ -934,6 +945,7 @@ function renderSummary() {
     if (agg.vfolie)     rows.push(["Varmefolie",         agg.vfolie+" m²"]);
     if (agg.lavkabel)   rows.push(["Lavtb. varmekabel",  agg.lavkabel+" m²"]);
     if (agg.panel)      rows.push(["Panelovner",         agg.panel+" stk"]);
+    if (agg.termostat)  rows.push(["Termostat",          agg.termostat+" stk"]);
     if (agg.royk)       rows.push(["Røykvarsler",        agg.royk+" stk"]);
     if (agg.komfyrvakt) rows.push(["Komfyrvakt",        agg.komfyrvakt+" stk"]);
     PANEL_ITEMS.forEach(p => { if (agg["panel_"+p.id]) rows.push([p.name, agg["panel_"+p.id]+" stk"]); });
@@ -985,6 +997,7 @@ function renderSummary() {
   if (tot.vfolie)     totRows.push(["Varmefolie",         tot.vfolie+" m²"]);
   if (tot.lavkabel)   totRows.push(["Lavtb. varmekabel",  tot.lavkabel+" m²"]);
   if (tot.panel)      totRows.push(["Panelovner",         tot.panel+" stk"]);
+  if (tot.termostat)  totRows.push(["Termostat",          tot.termostat+" stk"]);
   if (tot.royk)       totRows.push(["Røykvarsler",        tot.royk+" stk"]);
   if (tot.komfyrvakt) totRows.push(["Komfyrvakt",         tot.komfyrvakt+" stk"]);
   PANEL_ITEMS.forEach(p => { if (tot["panel_"+p.id]) totRows.push([p.name, tot["panel_"+p.id]+" stk"]); });
@@ -1008,8 +1021,8 @@ function exportExcel() {
   const rooms = state.rooms;
   if (!rooms.length) { showToast("Ingen rom å eksportere", true); return; }
 
-  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
-  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.royk,r.komfyrvakt, ...PANEL_ITEMS.map(p=>r["panel_"+p.id])].map(v => v == null ? "" : v));
+  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Termostat","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
+  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.termostat,r.royk,r.komfyrvakt, ...PANEL_ITEMS.map(p=>r["panel_"+p.id])].map(v => v == null ? "" : v));
 
   const csv = [cols, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
   const bom = "﻿";
@@ -1045,7 +1058,7 @@ async function redigerRom(navn) {
   if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = rom.kommentar || "";
 
   // Avkrysningsbokser og verdier
-  const feats = {kurs:rom.kurser,stikkenkel:rom.stikk_enkel,stikkdobbel:rom.stikk_dobbel,stikkfire:rom.stikk_fire,stikkseks:rom.stikk_seks,data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,royk:rom.royk,komfyrvakt:rom.komfyrvakt,
+  const feats = {kurs:rom.kurser,stikkenkel:rom.stikk_enkel,stikkdobbel:rom.stikk_dobbel,stikkfire:rom.stikk_fire,stikkseks:rom.stikk_seks,data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,termostat:rom.termostat,royk:rom.royk,komfyrvakt:rom.komfyrvakt,
     jordfeil:rom.panel_jordfeil,ov:rom.panel_ov,malerplass:rom.panel_malerplass,svakstrom:rom.panel_svakstrom,innfelt:rom.panel_innfelt,utenpa:rom.panel_utenpa,tks:rom.panel_tks,tilforsel:rom.panel_tilforsel};
   Object.entries(feats).forEach(([id, v]) => {
     const cb = document.getElementById("cb-"+id);
