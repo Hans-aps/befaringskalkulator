@@ -797,8 +797,8 @@ function update() {
   const varmeRec   = m > 0 ? m : 0;
   // Montering vegglampe/taklampe/ledstrip anbefales kun når tilhørende lampepunkt
   // faktisk er tatt med under Belysning.
-  const recMontvgg = getChecked("vegg") ? recVegg : 0;
-  const recMonttak = getChecked("lamp") ? recLamp : 0;
+  const recMontvgg = getChecked("vegg") ? Math.round(getValOrRec("vegg", recVegg)) : 0;
+  const recMonttak = getChecked("lamp") ? Math.round(getValOrRec("lamp", recLamp)) : 0;
   const recMontled = getChecked("ledstrip") ? Math.round(getValOrRec("ledstrip", 0)) : 0;
   const recRoyk    = m > 0 ? Math.max(1, Math.ceil(m/60)) : 0;
   const recSpeil   = r.hasBad ? Math.max(1, parseInt(ex.servant)||1) : 0;
@@ -880,10 +880,10 @@ function update() {
     ? `1 lysbryter per lyskilde-type valgt i Belysning (${lysgrupper.length} valgt: ${lysgrupper.map(id=>PLURAL[id]||id).join(", ")}).`
     : "Huk av lyspunkter under «Belysning» for forslag.");
   if (r.hasVegg) setRec("montvgg", recMontvgg>0?recMontvgg:"–", getChecked("vegg")
-    ? "Montering av lampepunkt vegg inkl. kabling og feste"
+    ? `Følger valgt antall under Belysning → Lampepunkt vegg (${recMontvgg} stk). Inkl. kabling og feste.`
     : "Huk av «Lampepunkt vegg» under Belysning for forslag.");
   setRec("monttak", recMonttak>0?recMonttak:"–", getChecked("lamp")
-    ? "Montering av lampepunkt tak / pendel inkl. oppheng og kabling"
+    ? `Følger valgt antall under Belysning → Lampepunkt tak (${recMonttak} stk). Inkl. oppheng og kabling.`
     : "Huk av «Lampepunkt tak» under Belysning for forslag.");
   setRec("montled", recMontled>0?recMontled+" m":"–", getChecked("ledstrip")
     ? `Følger lengden angitt under Belysning → Ledstrip (${recMontled} m).`
