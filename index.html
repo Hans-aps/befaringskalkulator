@@ -606,10 +606,10 @@ function buildXrows() {
   document.getElementById("xrows-data").innerHTML = xrow("data","Datauttak","RJ45 nettverkspunkt");
   document.getElementById("xrows-lys").innerHTML =
     xrow("down","Downlight","innfelt i tak") +
-    xrow("lamp","Lampepunkt","pendel / taklampe") +
+    xrow("lamp","Lampepunkt tak","pendel / taklampe") +
     xrow("spot","Spotlight","skinne / justerbar") +
-    xrow("vegg","Vegglampe","applique / veggarmatur") +
-    xrow("ledstrip","Ledstrip","dekorativ LED-list, angis i meter");
+    xrow("vegg","Lampepunkt vegg","applique / veggarmatur") +
+    xrow("ledstrip","Ledstripe","dekorativ LED-list, angis i meter");
   document.getElementById("speilRow").innerHTML = xrow("speil","Speilbelysning","over/rundt speil");
   document.getElementById("xrows-montering").innerHTML =
     xrow("montvgg","Montering vegglampe","feste, kabling og tilkobling") +
@@ -658,10 +658,10 @@ function xrow(id, name, sub, cls) {
 }
 
 const PLURAL = {
-  data:"datauttak", down:"downlights", lamp:"lampepunkter", spot:"spotlights",
-  vegg:"vegglamper", speil:"speillamper", ledstrip:"m ledstrip", dimmer:"dimmere", bryter:"brytere", lysbryter:"lysbrytere",
+  data:"datauttak", down:"downlights", lamp:"lampepunkt tak", spot:"spotlights",
+  vegg:"lampepunkt vegg", speil:"speillamper", ledstrip:"m ledstripe", dimmer:"dimmere", bryter:"brytere", lysbryter:"lysbrytere",
   vkabel:"m² varmekabel", vfolie:"m² varmefolie", lavkabel:"m² lavtbyggende kabel", panel:"panelovner", termostat:"termostater",
-  montvgg:"stk (vegglampe)", monttak:"stk (taklampe)", montled:"m ledstrip",
+  montvgg:"stk (lampepunkt vegg)", monttak:"stk (lampepunkt tak)", montled:"m ledstripe",
   royk:"røykvarsler", komfyrvakt:"komfyrvakter",
   stikkenkel:"enkle stikkontakter", stikkdobbel:"dobbeltstikkontakter",
   stikkfire:"fireveisstikkontakter", stikkseks:"seksveisstikkontakter",
@@ -795,7 +795,10 @@ function update() {
   const recVegg    = r.hasVegg && m>0 ? (r.lys.vegg.per>0 ? Math.max(1,Math.round(m/r.lys.vegg.per*hF)) : 2) : 0;
   const panelRec   = r.ingenPanelovn ? 0 : calcPanelovn(m);
   const varmeRec   = m > 0 ? m : 0;
-  // Montering ledstrip følger antall meter som faktisk er angitt under Belysning → Ledstrip.
+  // Montering vegglampe/taklampe/ledstrip anbefales kun når tilhørende lampepunkt
+  // faktisk er tatt med under Belysning.
+  const recMontvgg = getChecked("vegg") ? recVegg : 0;
+  const recMonttak = getChecked("lamp") ? recLamp : 0;
   const recMontled = getChecked("ledstrip") ? Math.round(getValOrRec("ledstrip", 0)) : 0;
   const recRoyk    = m > 0 ? Math.max(1, Math.ceil(m/60)) : 0;
   const recSpeil   = r.hasBad ? Math.max(1, parseInt(ex.servant)||1) : 0;
@@ -838,7 +841,7 @@ function update() {
   const varmetyper  = ["vkabel","vfolie","panel"].filter(id => getChecked(id));
   const recTermostat = m>0 ? varmetyper.length : 0;
 
-  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recLedstrip,recVegg,recSpeil,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer,recLysbryter,recTermostat};
+  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recLedstrip,recVegg,recSpeil,m,panelRec,varmeRec,recMontvgg,recMonttak,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer,recLysbryter,recTermostat};
 
   function setRec(id, num, note) {
     const val = m>0 ? num : "–";
@@ -876,8 +879,12 @@ function update() {
   setRec("lysbryter", recLysbryter||"–", lysgrupper.length
     ? `1 lysbryter per lyskilde-type valgt i Belysning (${lysgrupper.length} valgt: ${lysgrupper.map(id=>PLURAL[id]||id).join(", ")}).`
     : "Huk av lyspunkter under «Belysning» for forslag.");
-  if (r.hasVegg) setRec("montvgg", recVegg||"–", "Montering av vegglampe inkl. kabling og feste");
-  setRec("monttak", recLamp||"–",  "Montering av taklampe / pendel inkl. oppheng og kabling");
+  if (r.hasVegg) setRec("montvgg", recMontvgg>0?recMontvgg:"–", getChecked("vegg")
+    ? "Montering av lampepunkt vegg inkl. kabling og feste"
+    : "Huk av «Lampepunkt vegg» under Belysning for forslag.");
+  setRec("monttak", recMonttak>0?recMonttak:"–", getChecked("lamp")
+    ? "Montering av lampepunkt tak / pendel inkl. oppheng og kabling"
+    : "Huk av «Lampepunkt tak» under Belysning for forslag.");
   setRec("montled", recMontled>0?recMontled+" m":"–", getChecked("ledstrip")
     ? `Følger lengden angitt under Belysning → Ledstrip (${recMontled} m).`
     : "Huk av og angi lengde under Belysning → Ledstrip for forslag.");
@@ -943,8 +950,8 @@ async function ferdigRom() {
     ledstrip:      isPanel ? 0 : rv("ledstrip",  lastRecs.recLedstrip),
     vegg:          isPanel ? 0 : rv("vegg",      lastRecs.recVegg),
     speil:         isPanel ? 0 : rv("speil",     lastRecs.recSpeil),
-    montvgg:       isPanel ? 0 : rv("montvgg",   lastRecs.recVegg),
-    monttak:       isPanel ? 0 : rv("monttak",   lastRecs.recLamp),
+    montvgg:       isPanel ? 0 : rv("montvgg",   lastRecs.recMontvgg),
+    monttak:       isPanel ? 0 : rv("monttak",   lastRecs.recMonttak),
     montled:       isPanel ? 0 : rv("montled",   lastRecs.recMontled),
     dimmer:        isPanel ? 0 : rv("dimmer",    lastRecs.recDimmer),
     lysbryter:     isPanel ? 0 : rv("lysbryter", lastRecs.recLysbryter),
@@ -1052,9 +1059,9 @@ function renderSummary() {
     }
     if (agg.datauttak)  rows.push(["Datauttak",          agg.datauttak+" stk"]);
     if (agg.down)       rows.push(["Downlights",         agg.down+" stk"]);
-    if (agg.lamp)       rows.push(["Lampepunkter",       agg.lamp+" stk"]);
+    if (agg.lamp)       rows.push(["Lampepunkt tak",      agg.lamp+" stk"]);
     if (agg.spot)       rows.push(["Spotlights",         agg.spot+" stk"]);
-    if (agg.vegg)       rows.push(["Vegglamper",         agg.vegg+" stk"]);
+    if (agg.vegg)       rows.push(["Lampepunkt vegg",     agg.vegg+" stk"]);
     if (agg.ledstrip)   rows.push(["Ledstrip",            agg.ledstrip+" m"]);
     if (agg.speil)      rows.push(["Speilbelysning",     agg.speil+" stk"]);
     if (agg.montvgg)    rows.push(["Mont. vegglampe",    agg.montvgg+" stk"]);
@@ -1106,9 +1113,9 @@ function renderSummary() {
   totRows.push(["Sikringskurser",                          tot.kurser+" stk"]);
   if (tot.datauttak)  totRows.push(["Datauttak",          tot.datauttak+" stk"]);
   if (tot.down)       totRows.push(["Downlights",         tot.down+" stk"]);
-  if (tot.lamp)       totRows.push(["Lampepunkter",       tot.lamp+" stk"]);
+  if (tot.lamp)       totRows.push(["Lampepunkt tak",      tot.lamp+" stk"]);
   if (tot.spot)       totRows.push(["Spotlights",         tot.spot+" stk"]);
-  if (tot.vegg)       totRows.push(["Vegglamper",         tot.vegg+" stk"]);
+  if (tot.vegg)       totRows.push(["Lampepunkt vegg",     tot.vegg+" stk"]);
   if (tot.ledstrip)   totRows.push(["Ledstrip",            tot.ledstrip+" m"]);
   if (tot.speil)      totRows.push(["Speilbelysning",     tot.speil+" stk"]);
   if (tot.montvgg)    totRows.push(["Mont. vegglampe",    tot.montvgg+" stk"]);
@@ -1145,7 +1152,7 @@ function exportExcel() {
   const rooms = state.rooms;
   if (!rooms.length) { showToast("Ingen rom å eksportere", true); return; }
 
-  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Ledstrip (m)","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Lysbrytere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Termostat","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
+  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkt tak","Spotlights","Ledstripe (m)","Lampepunkt vegg","Speilbelysning","Mont.lampepunkt vegg","Mont.lampepunkt tak","Mont.ledstripe (m)","Dimmere","Lysbrytere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Termostat","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
   const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.ledstrip,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.lysbryter,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.termostat,r.royk,r.komfyrvakt, ...PANEL_ITEMS.map(p=>r["panel_"+p.id])].map(v => v == null ? "" : v));
 
   const csv = [cols, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
