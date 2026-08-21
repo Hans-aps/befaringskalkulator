@@ -113,6 +113,7 @@
   .xhdr:hover { background: var(--bg-sec); }
   .xhdr input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; }
   .xname { font-size: 14px; font-weight: 500; flex: 1; }
+  .xrec-preview { font-size: 12px; color: var(--text-muted); font-weight: 400; }
   .xbody { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--bg-sec); display: none; }
   .xbody.open { display: block; }
   .xrec { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
@@ -274,7 +275,7 @@
           <div class="sec-title">Lysstyring</div>
           <div id="xrows-styring"></div>
 
-          <div class="sec-title">Oppvarmingskilde</div>
+          <div class="sec-title" id="varmeSecTitle">Oppvarmingskilde</div>
           <div id="xrows-varme"></div>
 
           <div class="sec-title">Sikkerhet</div>
@@ -342,16 +343,72 @@ function setFbStatus(msg, ok) {
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const ROOMS_DEF = {
-  stue:     { label:"Stue",        nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>.", stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:(m)=>m>25?3:2, hasTv:true,  data:(m)=>2,  dataNote:"2 datauttak anbefalt i stue",         kurs:(m)=>Math.ceil(m/20)+1, extras:[], ip:false, hasBad:false, hasKomfyr:false, lys:{down:{per:2,n:"1 downlight per 2 m²"},lamp:{per:8,n:"1 lampepunkt per 6–10 m²"},spot:{per:4,n:"1 spotlight per 3–5 m²"},vegg:{per:10,n:"1 vegglampe per 8–12 m²"}}, varme:{panel:(m)=>Math.ceil(m/20)} },
-  soverom:  { label:"Soverom",     nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>.", stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:()=>2,          hasTv:true,  data:(m)=>1,  dataNote:"1 datauttak anbefalt",                kurs:()=>1,                  extras:[], ip:false, hasBad:false, hasKomfyr:false, lys:{down:{per:2.5,n:"1 downlight per 2–3 m²"},lamp:{per:10,n:"1 lampepunkt over seng"},spot:{per:5,n:"1 spotlight per 4–6 m²"},vegg:{per:0,n:"2 vegglamper ved seng"}}, varme:{panel:(m)=>Math.ceil(m/20)} },
-  kjokken:  { label:"Kjøkken",     nek:"Min. <strong>1 uttak per fast apparat</strong> + <strong>2 uttak per 2 m benk</strong> + <strong>4 uttak</strong> ved spiseplass + min. 2 per 2 m fri vegg.", stikk:(m,ex)=>Math.ceil(((parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2)/2), uttak:(m,ex)=>(parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2, bryter:()=>1, hasTv:false, data:(m)=>1, dataNote:"1 datauttak anbefalt", kurs:(m,ex)=>Math.ceil((parseInt(ex.app)||5)/2)+2, extras:[{id:"app",label:"Faste apparater",type:"number",def:5,min:1,max:20},{id:"benk",label:"Benkemeter (m)",type:"number",def:3,min:1,max:12,step:0.5},{id:"fv",label:"Fri vegg (m)",type:"number",def:2,min:0,max:10,step:0.5},{id:"spl",label:"Spiseplass?",type:"select",opts:[{v:"0",l:"Nei"},{v:"1",l:"Ja (+4)"}],def:"0"}],
+  stue:     { label:"Stue",        nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>. Ny kurs kun ved varme og høyt effektbehov.",
+    stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:(m)=>m>25?3:2, hasTv:true, data:(m)=>2, dataNote:"2 datauttak anbefalt i stue",
+    extras:[], ip:false, hasBad:false, hasVegg:true, hasKomfyr:false, erVatrom:false,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²)"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m²"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:10,n:"1 vegglampe per 8–12 m²"}} },
+  soverom:  { label:"Soverom",     nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 4 m²</strong>. Ny kurs kun ved varme og høyt effektbehov.",
+    stikk:(m)=>Math.ceil(m/4), uttak:(m)=>Math.ceil(m/4)*2, bryter:()=>2, hasTv:true, data:(m)=>1, dataNote:"1 datauttak anbefalt",
+    extras:[], ip:false, hasBad:false, hasVegg:true, hasKomfyr:false, erVatrom:false,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²)"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m²"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:0,n:"2 vegglamper ved seng"}} },
+  kjokken:  { label:"Kjøkken",     nek:"Min. <strong>1 enkel stikkontakt per fast apparat</strong> + <strong>1 dobbel per 2 m benk</strong> + <strong>1 firevei</strong> ved spiseplass + 1 dobbel per 2 m fri vegg.",
+    stikk:(m,ex)=>Math.ceil(((parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2)/2), uttak:(m,ex)=>(parseInt(ex.app)||5)+Math.ceil((parseFloat(ex.benk)||3)/2)*2+(ex.spl==="1"?4:0)+Math.ceil((parseFloat(ex.fv)||2)/2)*2,
+    bryter:()=>1, hasTv:false, data:(m)=>1, dataNote:"1 datauttak anbefalt",
+    kursCustom:(m,ex)=>Math.ceil((parseInt(ex.app)||5)/2)+2,
+    extras:[{id:"app",label:"Faste apparater",type:"number",def:5,min:1,max:20},{id:"benk",label:"Benkemeter (m)",type:"number",def:3,min:1,max:12,step:0.5},{id:"fv",label:"Fri vegg (m)",type:"number",def:2,min:0,max:10,step:0.5},{id:"spl",label:"Spiseplass?",type:"select",opts:[{v:"0",l:"Nei"},{v:"1",l:"Ja (+4)"}],def:"0"}],
     stikkSplit:(m,ex)=>({ enkel:(parseInt(ex.app)||5), dobbel:Math.ceil((parseFloat(ex.benk)||3)/2)+Math.ceil((parseFloat(ex.fv)||2)/2), fire:ex.spl==="1"?1:0, seks:0 }),
-    ip:false, hasBad:false, hasKomfyr:true, lys:{down:{per:1.5,n:"1 downlight per 1–2 m²"},lamp:{per:0,n:"Lampepunkt over spisebord"},spot:{per:3,n:"1 spotlight per 2–3 m²"},vegg:{per:0,n:"Vegglampe ved spiseplass"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
-  bad:      { label:"Bad/WC",      nek:"Min. <strong>2 uttak (1 dobbel)</strong> – under 3 m² godtas 1 uttak. Kun sone 3 (>60 cm fra vann).", stikk:(m)=>1, uttak:(m)=>m<3?1:2, bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig på bad", kurs:(m)=>Math.ceil(m/6)+1, extras:[], ip:true, hasBad:true, hasKomfyr:false, lys:{down:{per:1.5,n:"IP44/65. 1 per 1–2 m²"},lamp:{per:0,n:"Taklampe IP44"},spot:{per:3,n:"IP44-spotlight"},vegg:{per:0,n:"Veggarmatur IP44"}}, varme:{panel:null} },
-  gang:     { label:"Entré/gang",  nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 6 m²</strong>.", stikk:(m)=>Math.ceil(m/6), uttak:(m)=>Math.ceil(m/6)*2, bryter:(m)=>Math.max(2,Math.ceil(m/5)), hasTv:false, data:()=>0, dataNote:"Datauttak sjelden nødvendig", kurs:()=>1, extras:[], ip:false, hasBad:false, hasKomfyr:false, lys:{down:{per:1.8,n:"1 downlight per 1,5–2 m²"},lamp:{per:6,n:"1 lampepunkt per 4–8 m²"},spot:{per:4,n:"1 spotlight per 3–5 m²"},vegg:{per:5,n:"1 vegglampe per 4–6 m²"}}, varme:{panel:(m)=>Math.ceil(m/15)} },
-  garasje:  { label:"Garasje/bod", nek:"Tilpasses funksjon – <strong>minimum 2 uttak (1 dobbel)</strong>.", stikk:(m)=>Math.max(1,Math.ceil(m/8)), uttak:(m)=>Math.max(2,Math.ceil(m/8)*2), bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak valgfritt", kurs:(m)=>Math.ceil(m/25)+1, extras:[], ip:true, hasBad:false, hasKomfyr:false, lys:{down:{per:3,n:"IP44. 1 per 3–4 m²"},lamp:{per:0,n:"Takarmatur – 1 per 8–12 m²"},spot:{per:5,n:"1 spotlight over arbeidsbenk"},vegg:{per:0,n:"Veggarmatur ved inngang"}}, varme:{panel:(m)=>Math.ceil(m/25)} },
-  utvendig: { label:"Utvendig",    nek:"Min. <strong>2 uttak (1 dobbel)</strong> på alle verandaer, altaner og balkonger.", stikk:(m)=>Math.max(1,Math.ceil(m/10)), uttak:(m)=>Math.max(2,Math.ceil(m/10)*2), bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig", kurs:()=>1, extras:[], ip:true, hasBad:false, hasKomfyr:false, lys:{down:{per:3,n:"IP65. 1 per 2–4 m²"},lamp:{per:0,n:"Veggarmatur ved dør"},spot:{per:5,n:"IP65 spotlight"},vegg:{per:0,n:"Veggarmatur IP65"}}, varme:{panel:null} }
+    ip:false, hasBad:false, hasVegg:true, hasKomfyr:true, erVatrom:false,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²)"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m²"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:0,n:"Vegglampe ved spiseplass"}} },
+  bad:      { label:"Bad/WC",      nek:"Dedikert uttak til stasjonært utstyr. Forøvrig min. <strong>2 uttak (1 dobbel)</strong> – godtas 1 uttak (enkel) hvis under 3 m². Kun sone 3 (>60 cm fra vann).",
+    stikkSplit:(m,ex)=>{ const app=parseInt(ex.app)||0; return { enkel: app + (m<3?1:0), dobbel: m<3?0:1, fire:0, seks:0 }; },
+    stikk:(m,ex)=>{ const app=parseInt(ex.app)||0; return app + (m<3?1:0) + (m<3?0:1); }, uttak:(m,ex)=>{ const app=parseInt(ex.app)||0; return (app + (m<3?1:0))*1 + (m<3?0:1)*2; },
+    bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig på bad",
+    extras:[{id:"app",label:"Faste apparater m/dedikert uttak",type:"number",def:0,min:0,max:10},{id:"servant",label:"Antall servant",type:"number",def:1,min:0,max:10}],
+    ip:true, hasBad:true, hasVegg:true, hasKomfyr:false, erVatrom:true,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²), IP44/IP65"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m², IP44"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:0,n:"Veggarmatur IP44"}} },
+  vaskerom: { label:"Vaskerom",    nek:"Dedikert uttak til stasjonært utstyr (vaskemaskin/tørketrommel). Forøvrig min. <strong>2 uttak (1 dobbel)</strong> – godtas 1 uttak (enkel) hvis under 3 m². Ny kurs kun ved varme og høyt effektbehov.",
+    stikkSplit:(m,ex)=>{ const app=parseInt(ex.app)||0; return { enkel: app + (m<3?1:0), dobbel: m<3?0:1, fire:0, seks:0 }; },
+    stikk:(m,ex)=>{ const app=parseInt(ex.app)||0; return app + (m<3?1:0) + (m<3?0:1); }, uttak:(m,ex)=>{ const app=parseInt(ex.app)||0; return (app + (m<3?1:0))*1 + (m<3?0:1)*2; },
+    bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig på vaskerom",
+    extras:[{id:"app",label:"Faste apparater m/dedikert uttak",type:"number",def:2,min:0,max:10}],
+    ip:true, hasBad:false, hasVegg:false, hasKomfyr:false, erVatrom:true,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²), IP44"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m², IP44"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:0,n:""}} },
+  gang:     { label:"Entré/gang",  nek:"Min. <strong>2 uttak (= 1 dobbel stikkontakt) per påbegynte 6 m²</strong>. Ny kurs kun ved varme og høyt effektbehov.",
+    stikk:(m)=>Math.ceil(m/6), uttak:(m)=>Math.ceil(m/6)*2, bryter:(m)=>Math.max(2,Math.ceil(m/5)), hasTv:false, data:()=>0, dataNote:"Datauttak sjelden nødvendig",
+    extras:[], ip:false, hasBad:false, hasVegg:true, hasKomfyr:false, erVatrom:false,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²)"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m²"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:5,n:"1 vegglampe per 4–6 m²"}} },
+  garasje:  { label:"Garasje/bod", nek:"Tilpasses funksjon – fast <strong>minimum 2 uttak (1 dobbel)</strong>, uavhengig av areal. Ny kurs kun ved varme og høyt effektbehov.",
+    stikk:()=>1, uttak:()=>2, bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak valgfritt",
+    extras:[], ip:true, hasBad:false, hasVegg:true, hasKomfyr:false, erVatrom:false,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²), IP44"},lamp:{n:"1 stk pr. rom, 2 stk hvis over 20 m²"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:0,n:"Veggarmatur ved inngang"}} },
+  utvendig: { label:"Utvendig",    nek:"Fast <strong>minimum 2 uttak (1 dobbel) IP44</strong> på alle verandaer, altaner og balkonger, uavhengig av areal. Ny kurs kun ved varme og høyt effektbehov.",
+    stikk:()=>1, uttak:()=>2, bryter:()=>1, hasTv:false, data:()=>0, dataNote:"Datauttak ikke vanlig",
+    extras:[], ip:true, hasBad:false, hasVegg:false, hasKomfyr:false, erVatrom:false, hasVarme:false, ingenPanelovn:true,
+    lys:{down:{n:"Delt formel (4 stk v/6 m², 12 stk v/28 m²), IP65"},lamp:{fast:1,n:"Veggarmatur ved dør (fast, ikke arealformel)"},spot:{n:"Ingen fast anbefaling – kun ekstra ved behov"},vegg:{per:0,n:""}} }
 };
+
+// ─── DELTE NEK-FORMLER (brukes på tvers av romtyper, jf. regelgrunnlag) ──────
+function calcDownlight(m) {
+  if (m <= 0) return 0;
+  const raw = 4 + (m - 6) * (12 - 4) / (28 - 6);
+  return Math.max(2, Math.round(raw / 2) * 2);
+}
+function calcLampepunkt(m) {
+  if (m <= 0) return 0;
+  return m > 20 ? 2 : 1;
+}
+function calcPanelovn(m) {
+  if (m <= 0) return 0;
+  return Math.ceil(m * 60 / 1000);
+}
+// Ny kurs: kun anbefalt når en varmekilde er valgt og effektbehovet er høyt.
+// Total effekt = varmeeffekt (m²×60W) + generelt forbruk (m²×90W, 130W/m² våtrom).
+// 1 kurs = 2450 W reelt nyttbar effekt (15A minus ca. 1000W reservert til stikk).
+function calcVarmestyrtKurs(m, erVatrom, harVarme) {
+  if (!harVarme || m <= 0) return 0;
+  const wattPerM2 = erVatrom ? 190 : 150;
+  return Math.max(1, Math.ceil(m * wattPerM2 / 2450));
+}
 
 // ─── SIKRINGSSKAP (egen fane, ikke et vanlig rom) ────────────────────────────
 const PANEL_ITEMS = [
@@ -551,7 +608,8 @@ function buildXrows() {
     xrow("down","Downlight","innfelt i tak") +
     xrow("lamp","Lampepunkt","pendel / taklampe") +
     xrow("spot","Spotlight","skinne / justerbar") +
-    xrow("vegg","Vegglampe","applique / veggarmatur");
+    xrow("vegg","Vegglampe","applique / veggarmatur") +
+    xrow("ledstrip","Ledstrip","dekorativ LED-list, angis i meter");
   document.getElementById("speilRow").innerHTML = xrow("speil","Speilbelysning","over/rundt speil");
   document.getElementById("xrows-montering").innerHTML =
     xrow("montvgg","Montering vegglampe","feste, kabling og tilkobling") +
@@ -559,7 +617,8 @@ function buildXrows() {
     xrow("montled","Montering ledstrip","m ledstrip inkl. feste og driver");
   document.getElementById("xrows-styring").innerHTML =
     xrow("dimmer","Dimmer","trinnløs lysstyrke") +
-    xrow("bryter","Bryter","standard lysbryter");
+    xrow("lysbryter","Lysbryter","egen bryter per valgt lyskilde-type") +
+    xrow("bryter","Bryter","standard bryter for rommet");
   document.getElementById("xrows-varme").innerHTML =
     xrow("vkabel","Varmekabel","anbefalt: hele gulvarealet") +
     xrow("vfolie","Varmefolie","anbefalt: hele gulvarealet") +
@@ -582,13 +641,14 @@ function buildXrows() {
   PANEL_ITEMS.forEach(p => {
     const rc = document.getElementById("rec-"+p.id); if (rc) rc.textContent = "1";
     const nt = document.getElementById("note-"+p.id); if (nt) nt.textContent = "Huk av og juster antall ved behov.";
+    const pv = document.getElementById("recprev-"+p.id); if (pv) pv.textContent = "– Anbefalt 1 stk";
   });
 }
 
 function xrow(id, name, sub, cls) {
   return `<div class="xrow${cls?" "+cls:""}" id="xrow-${id}">
     <label class="xhdr"><input type="checkbox" id="cb-${id}" onchange="toggleBody('${id}',this.checked); update();">
-    <span class="xname">${name}</span></label>
+    <span class="xname">${name} <span class="xrec-preview" id="recprev-${id}"></span></span></label>
     <div class="xbody" id="body-${id}">
       <div class="xrec"><span class="xrec-num" id="rec-${id}">–</span><span class="xrec-lbl">anbefalt</span></div>
       <div class="xnote" id="note-${id}"></div>
@@ -599,7 +659,7 @@ function xrow(id, name, sub, cls) {
 
 const PLURAL = {
   data:"datauttak", down:"downlights", lamp:"lampepunkter", spot:"spotlights",
-  vegg:"vegglamper", speil:"speillamper", dimmer:"dimmere", bryter:"brytere",
+  vegg:"vegglamper", speil:"speillamper", ledstrip:"m ledstrip", dimmer:"dimmere", bryter:"brytere", lysbryter:"lysbrytere",
   vkabel:"m² varmekabel", vfolie:"m² varmefolie", lavkabel:"m² lavtbyggende kabel", panel:"panelovner", termostat:"termostater",
   montvgg:"stk (vegglampe)", monttak:"stk (taklampe)", montled:"m ledstrip",
   royk:"røykvarsler", komfyrvakt:"komfyrvakter",
@@ -642,6 +702,36 @@ function selectRoom(room) {
     document.getElementById("cb-speil").checked = false;
     document.getElementById("body-speil")?.classList.remove("open");
   }
+
+  // Vegglampe (og montering av vegglampe) kun for rom der det er definert
+  ["xrow-vegg","xrow-montvgg"].forEach(id => {
+    const row = document.getElementById(id);
+    if (row) row.style.display = r.hasVegg ? "" : "none";
+  });
+  if (!r.hasVegg) {
+    ["cb-vegg","cb-montvgg"].forEach(id => {
+      const cb = document.getElementById(id);
+      if (cb) cb.checked = false;
+    });
+    document.getElementById("body-vegg")?.classList.remove("open");
+    document.getElementById("body-montvgg")?.classList.remove("open");
+  }
+
+  // Oppvarmingskilde skjules helt for rom uten tilgjengelige varmekilder (utvendig)
+  const harVarmekilder = r.hasVarme !== false;
+  document.getElementById("varmeSecTitle")?.classList.toggle("hidden", !harVarmekilder);
+  document.getElementById("xrows-varme")?.classList.toggle("hidden", !harVarmekilder);
+  if (!harVarmekilder) {
+    ["vkabel","vfolie","lavkabel","panel"].forEach(id => {
+      const cb = document.getElementById("cb-"+id);
+      if (cb) cb.checked = false;
+      document.getElementById("body-"+id)?.classList.remove("open");
+    });
+  }
+
+  // Panelovn kun der det er aktuelt (ikke utendørs)
+  const panelRow = document.getElementById("xrow-panel");
+  if (panelRow) panelRow.style.display = r.ingenPanelovn ? "none" : "";
 
   // Komfyrvakt kun for kjøkken
   const komfyrRow = document.getElementById("xrow-komfyrvakt");
@@ -693,18 +783,29 @@ function update() {
   const stikk   = m > 0 ? r.stikk(m, ex) : 0;
   const uttak   = m > 0 ? r.uttak(m, ex) : 0;
   const bryter  = m > 0 ? r.bryter(m) : 0;
-  const kursRec = m > 0 ? (typeof r.kurs==="function" ? r.kurs(m,ex) : r.kurs) : 0;
-  const totKurs = hasTv ? kursRec+1 : kursRec;
   const dataRec = m > 0 ? (typeof r.data==="function" ? r.data(m) : r.data) : 0;
 
-  const recDown    = m>0&&ly.down.per>0 ? Math.max(1,Math.round(m/ly.down.per*hF)) : 0;
-  const recLamp    = m>0&&ly.lamp.per>0 ? Math.max(1,Math.round(m/ly.lamp.per))    : 0;
-  const recSpot    = m>0&&ly.spot.per>0 ? Math.max(1,Math.round(m/ly.spot.per*hF)) : 0;
-  const recVegg    = m>0 ? (ly.vegg.per>0 ? Math.max(1,Math.round(m/ly.vegg.per)) : 2) : 0;
-  const panelRec   = r.varme.panel&&m>0 ? r.varme.panel(m) : 0;
+  // Downlight/Lampepunkt/Panelovn: delte formler på tvers av romtyper (se del 1
+  // i regelgrunnlaget). Spot og Ledstrip har ingen fast anbefaling i noen rom
+  // – lengden på ledstrip angis manuelt i meter, og styrer montering (under).
+  const recDown    = calcDownlight(m);
+  const recLamp    = r.lys.lamp.fast != null ? (m>0?r.lys.lamp.fast:0) : calcLampepunkt(m);
+  const recSpot    = 0;
+  const recLedstrip = 0;
+  const recVegg    = r.hasVegg && m>0 ? (r.lys.vegg.per>0 ? Math.max(1,Math.round(m/r.lys.vegg.per*hF)) : 2) : 0;
+  const panelRec   = r.ingenPanelovn ? 0 : calcPanelovn(m);
   const varmeRec   = m > 0 ? m : 0;
-  const recMontled = m > 0 ? Math.round(Math.sqrt(m)*2) : 0;
+  // Montering ledstrip følger antall meter som faktisk er angitt under Belysning → Ledstrip.
+  const recMontled = getChecked("ledstrip") ? Math.round(getValOrRec("ledstrip", 0)) : 0;
   const recRoyk    = m > 0 ? Math.max(1, Math.ceil(m/60)) : 0;
+  const recSpeil   = r.hasBad ? Math.max(1, parseInt(ex.servant)||1) : 0;
+
+  // Ny kurs fra sikringsskap: kun anbefalt når en varmekilde faktisk er valgt og
+  // effektbehovet er høyt (se del 1). Kjøkken har egen, ikke-varmestyrt formel.
+  const harVarme = ["vkabel","vfolie","lavkabel","panel"].some(id => getChecked(id));
+  const totKurs = typeof r.kursCustom === "function"
+    ? r.kursCustom(m, ex)
+    : calcVarmestyrtKurs(m, r.erVatrom, harVarme);
 
   // Stikkontakt-forslag: fordeles på enkelt/dobbelt/firevei ut fra hva uttakene
   // faktisk skal brukes til (rom med egen stikkSplit, f.eks. kjøkken der faste
@@ -725,25 +826,36 @@ function update() {
     recStikkSeks   = 0;
   }
 
-  // Dimmer-forslag: 1 dimmer per lysgruppe som er huket av i rommet
+  // Dimmer/Lysbryter-forslag: 1 stk pr. valgt lyskilde-type i rommet
   // (Downlight/Lampepunkt/Spotlight/Vegglampe/Speilbelysning teller hver som egen gruppe).
-  const lysgrupper  = ["down","lamp","spot","vegg","speil"].filter(id => getChecked(id));
+  const lysgrupper  = ["down","lamp","spot","vegg","speil","ledstrip"].filter(id => getChecked(id));
   const recDimmer   = m>0 ? lysgrupper.length : 0;
+  const recLysbryter = recDimmer;
 
-  // Termostat-forslag: 1 termostat per valgt gulvvarmetype (varmekabel/varmefolie/
-  // lavtbyggende varmekabel) – hver styres normalt av sin egen termostat.
-  // Panelovn har egen innebygd termostat og teller ikke med her.
-  const varmetyper  = ["vkabel","vfolie","lavkabel"].filter(id => getChecked(id));
+  // Termostat-forslag: 1 termostat per valgt FYSISK varmekilde (varmekabel/
+  // varmefolie/panelovn). Lavtbyggende varmekabel telles aldri med – det er
+  // kun et pr.-m²-tillegg til en varmekabel som uansett gir 1 termostat.
+  const varmetyper  = ["vkabel","vfolie","panel"].filter(id => getChecked(id));
   const recTermostat = m>0 ? varmetyper.length : 0;
 
-  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recVegg,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer,recTermostat};
+  lastRecs = {stikk,uttak,bryter,kursRec:totKurs,dataRec,recDown,recLamp,recSpot,recLedstrip,recVegg,recSpeil,m,panelRec,varmeRec,recMontled,recRoyk,recStikkEnkel,recStikkDobbel,recStikkFire,recStikkSeks,recDimmer,recLysbryter,recTermostat};
 
   function setRec(id, num, note) {
-    const el = document.getElementById("rec-"+id); if (el) el.textContent = m>0 ? num : "–";
+    const val = m>0 ? num : "–";
+    const el = document.getElementById("rec-"+id); if (el) el.textContent = val;
     const ne = document.getElementById("note-"+id); if (ne) ne.innerHTML = note;
+    const pv = document.getElementById("recprev-"+id);
+    if (pv) {
+      const hasUnit = typeof val === "string" && /[a-zA-ZæøåÆØÅ]/.test(val);
+      pv.textContent = (val === "–" || val === "") ? "" : `– Anbefalt ${val}${hasUnit ? "" : " stk"}`;
+    }
   }
 
-  setRec("kurs", totKurs||"–", m>0?`<strong>Anbefalt: ${totKurs} kurser</strong>${hasTv?" (inkl. 1 egen kurs for TV/AV-uttak)":""} – jf. NEK 400.`:"Fyll inn m² for anbefaling.");
+  setRec("kurs", totKurs||"–", m>0
+    ? (harVarme || typeof r.kursCustom==="function"
+        ? `<strong>Anbefalt: ${totKurs} kurser</strong> – jf. NEK 400.`
+        : "Ingen ny kurs anbefalt – huk av en varmekilde under «Oppvarmingskilde» hvis effektbehovet tilsier egen kurs.")
+    : "Fyll inn m² for anbefaling.");
 
   setRec("stikkenkel",  recStikkEnkel||"–",  m>0?`Dekker et evt. oddetalls-uttak i NEK-kravet (${uttak} uttak totalt).`:"Fyll inn m².");
   setRec("stikkdobbel", recStikkDobbel||"–", m>0?`<strong>NEK 400 krever ${uttak} uttak totalt</strong> i rommet – 2 uttak per påbegynte areal.`:"Fyll inn m².");
@@ -754,24 +866,30 @@ function update() {
   setRec("down",    recDown||"–",  ly.down.n);
   setRec("lamp",    recLamp||"–",  ly.lamp.n);
   setRec("spot",    recSpot||"–",  ly.spot.n);
-  setRec("vegg",    recVegg||"–",  ly.vegg.n);
-  setRec("speil",   1,             "IP44 min. 1 speillampe per servant.");
+  setRec("ledstrip", recLedstrip||"–", "Ingen fast anbefaling – angi ønsket lengde i meter. Styrer forslag for «Montering ledstrip».");
+  if (r.hasVegg) setRec("vegg", recVegg||"–", ly.vegg.n);
+  if (r.hasBad)  setRec("speil", recSpeil||"–", "<strong>Min. 1 stk per servant</strong>, IP44.");
   setRec("bryter",  bryter||"–",   bryter>1?"2-veis bryterpar anbefalt":"Standard 1-pol bryter");
   setRec("dimmer",  recDimmer||"–", lysgrupper.length
-    ? `1 dimmer per lysgruppe valgt i Belysning (${lysgrupper.length} valgt: ${lysgrupper.map(id=>PLURAL[id]||id).join(", ")}).`
+    ? `1 dimmer per lyskilde-type valgt i Belysning (${lysgrupper.length} valgt: ${lysgrupper.map(id=>PLURAL[id]||id).join(", ")}).`
     : "Huk av lyspunkter under «Belysning» for forslag.");
-  setRec("montvgg", recVegg||"–",  "Montering av vegglampe inkl. kabling og feste");
+  setRec("lysbryter", recLysbryter||"–", lysgrupper.length
+    ? `1 lysbryter per lyskilde-type valgt i Belysning (${lysgrupper.length} valgt: ${lysgrupper.map(id=>PLURAL[id]||id).join(", ")}).`
+    : "Huk av lyspunkter under «Belysning» for forslag.");
+  if (r.hasVegg) setRec("montvgg", recVegg||"–", "Montering av vegglampe inkl. kabling og feste");
   setRec("monttak", recLamp||"–",  "Montering av taklampe / pendel inkl. oppheng og kabling");
-  setRec("montled", m>0?recMontled+" m":"–", "Estimert lengde basert på areal – juster etter behov");
+  setRec("montled", recMontled>0?recMontled+" m":"–", getChecked("ledstrip")
+    ? `Følger lengden angitt under Belysning → Ledstrip (${recMontled} m).`
+    : "Huk av og angi lengde under Belysning → Ledstrip for forslag.");
 
-  const varmeNote = m>0 ? `Anbefalt: <strong>hele gulvarealet – ${m} m²</strong>. Eget termostat-kurs anbefales.` : "Fyll inn m².";
+  const varmeNote = m>0 ? `Anbefalt: <strong>hele gulvarealet – ${m} m²</strong>.` : "Fyll inn m².";
   setRec("vkabel",     m>0?m+" m²":"–", varmeNote);
   setRec("vfolie",     m>0?m+" m²":"–", varmeNote);
   setRec("lavkabel",   m>0?m+" m²":"–", varmeNote);
-  setRec("panel",      panelRec||"–", r.varme.panel&&m>0?`${panelRec} stk – ca. ${Math.round(m*35)} W (35 W/m²). Eget 16A kurs per ovn.`:"Ikke vanlig for dette rommet.");
+  setRec("panel",      panelRec||"–", !r.ingenPanelovn&&m>0?`${panelRec} stk – 60 W/m² varmebehov, 1000 W pr. ovn. Eget 16A kurs per ovn.`:"Ikke aktuelt for dette rommet.");
   setRec("termostat",  recTermostat||"–", varmetyper.length
-    ? `1 termostat per gulvvarmetype valgt (${varmetyper.length} valgt: ${varmetyper.map(id=>PLURAL[id]||id).join(", ")}). Panelovn har egen innebygd termostat.`
-    : "Huk av varmekabel/varmefolie/lavtbyggende kabel for forslag.");
+    ? `1 termostat per valgt fysisk varmekilde (${varmetyper.length} valgt: ${varmetyper.map(id=>PLURAL[id]||id).join(", ")}). Lavtbyggende varmekabel telles ikke med egen termostat.`
+    : "Huk av varmekabel/varmefolie/panelovn for forslag.");
   setRec("royk",       recRoyk||"–", m>0?`<strong>Min. 1 per 60 m²</strong> – alltid 1 per etasje jf. TEK17. Anbefalt: ${recRoyk} stk.`:"Fyll inn m².");
   setRec("komfyrvakt", 1, "<strong>1 komfyrvakt per komfyr</strong> – anbefalt av Norsk brannvernforening. Monteres over komfyr.");
 
@@ -822,12 +940,14 @@ async function ferdigRom() {
     down:          isPanel ? 0 : rv("down",      lastRecs.recDown),
     lamp:          isPanel ? 0 : rv("lamp",      lastRecs.recLamp),
     spot:          isPanel ? 0 : rv("spot",      lastRecs.recSpot),
+    ledstrip:      isPanel ? 0 : rv("ledstrip",  lastRecs.recLedstrip),
     vegg:          isPanel ? 0 : rv("vegg",      lastRecs.recVegg),
-    speil:         isPanel ? 0 : rv("speil",     1),
+    speil:         isPanel ? 0 : rv("speil",     lastRecs.recSpeil),
     montvgg:       isPanel ? 0 : rv("montvgg",   lastRecs.recVegg),
     monttak:       isPanel ? 0 : rv("monttak",   lastRecs.recLamp),
     montled:       isPanel ? 0 : rv("montled",   lastRecs.recMontled),
     dimmer:        isPanel ? 0 : rv("dimmer",    lastRecs.recDimmer),
+    lysbryter:     isPanel ? 0 : rv("lysbryter", lastRecs.recLysbryter),
     bryter:        isPanel ? 0 : rv("bryter",    lastRecs.bryter),
     vkabel:        isPanel ? 0 : rv("vkabel",    lastRecs.varmeRec),
     vfolie:        isPanel ? 0 : rv("vfolie",    lastRecs.varmeRec),
@@ -904,7 +1024,7 @@ function renderSummary() {
     grouped[key].entries.push(rom);
   });
 
-  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,termostat:0,royk:0,komfyrvakt:0,
+  const ZERO = {m2:0,stikk:0,uttak:0,stikk_enkel:0,stikk_dobbel:0,stikk_fire:0,stikk_seks:0,kurser:0,seksveisstikk:0,datauttak:0,down:0,lamp:0,spot:0,ledstrip:0,vegg:0,speil:0,montvgg:0,monttak:0,montled:0,dimmer:0,lysbryter:0,bryter:0,vkabel:0,vfolie:0,lavkabel:0,panel:0,termostat:0,royk:0,komfyrvakt:0,
     panel_jordfeil:0,panel_ov:0,panel_malerplass:0,panel_svakstrom:0,panel_innfelt:0,panel_utenpa:0,panel_tks:0,panel_tilforsel:0};
 
   const sumHtml = order.map(key => {
@@ -935,11 +1055,13 @@ function renderSummary() {
     if (agg.lamp)       rows.push(["Lampepunkter",       agg.lamp+" stk"]);
     if (agg.spot)       rows.push(["Spotlights",         agg.spot+" stk"]);
     if (agg.vegg)       rows.push(["Vegglamper",         agg.vegg+" stk"]);
+    if (agg.ledstrip)   rows.push(["Ledstrip",            agg.ledstrip+" m"]);
     if (agg.speil)      rows.push(["Speilbelysning",     agg.speil+" stk"]);
     if (agg.montvgg)    rows.push(["Mont. vegglampe",    agg.montvgg+" stk"]);
     if (agg.monttak)    rows.push(["Mont. taklampe",     agg.monttak+" stk"]);
     if (agg.montled)    rows.push(["Mont. ledstrip",     agg.montled+" m"]);
     if (agg.dimmer)     rows.push(["Dimmere",            agg.dimmer+" stk"]);
+    if (agg.lysbryter)  rows.push(["Lysbrytere",         agg.lysbryter+" stk"]);
     if (agg.bryter)     rows.push(["Brytere",            agg.bryter+" stk"]);
     if (agg.vkabel)     rows.push(["Varmekabel",         agg.vkabel+" m²"]);
     if (agg.vfolie)     rows.push(["Varmefolie",         agg.vfolie+" m²"]);
@@ -987,11 +1109,13 @@ function renderSummary() {
   if (tot.lamp)       totRows.push(["Lampepunkter",       tot.lamp+" stk"]);
   if (tot.spot)       totRows.push(["Spotlights",         tot.spot+" stk"]);
   if (tot.vegg)       totRows.push(["Vegglamper",         tot.vegg+" stk"]);
+  if (tot.ledstrip)   totRows.push(["Ledstrip",            tot.ledstrip+" m"]);
   if (tot.speil)      totRows.push(["Speilbelysning",     tot.speil+" stk"]);
   if (tot.montvgg)    totRows.push(["Mont. vegglampe",    tot.montvgg+" stk"]);
   if (tot.monttak)    totRows.push(["Mont. taklampe",     tot.monttak+" stk"]);
   if (tot.montled)    totRows.push(["Mont. ledstrip",     tot.montled+" m"]);
   if (tot.dimmer)     totRows.push(["Dimmere",            tot.dimmer+" stk"]);
+  if (tot.lysbryter)  totRows.push(["Lysbrytere",         tot.lysbryter+" stk"]);
   if (tot.bryter)     totRows.push(["Brytere",            tot.bryter+" stk"]);
   if (tot.vkabel)     totRows.push(["Varmekabel",         tot.vkabel+" m²"]);
   if (tot.vfolie)     totRows.push(["Varmefolie",         tot.vfolie+" m²"]);
@@ -1021,8 +1145,8 @@ function exportExcel() {
   const rooms = state.rooms;
   if (!rooms.length) { showToast("Ingen rom å eksportere", true); return; }
 
-  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Termostat","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
-  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.termostat,r.royk,r.komfyrvakt, ...PANEL_ITEMS.map(p=>r["panel_"+p.id])].map(v => v == null ? "" : v));
+  const cols = ["Romnavn","Romtype","m²","Stikk","Uttak","Kurser","6-veisstikk","Datauttak","Downlights","Lampepunkter","Spotlights","Ledstrip (m)","Vegglamper","Speilbelysning","Mont.vegglampe","Mont.taklampe","Mont.ledstrip (m)","Dimmere","Lysbrytere","Brytere","Varmekabel m²","Varmefolie m²","Lavtb.kabel m²","Panelovner","Termostat","Røykvarsler","Komfyrvakt", ...PANEL_ITEMS.map(p=>p.name)];
+  const rows = rooms.map(r => [r.navn,r.romtype,r.m2,r.stikk,r.uttak,r.kurser,r.seksveisstikk,r.datauttak,r.down,r.lamp,r.spot,r.ledstrip,r.vegg,r.speil,r.montvgg,r.monttak,r.montled,r.dimmer,r.lysbryter,r.bryter,r.vkabel,r.vfolie,r.lavkabel,r.panel,r.termostat,r.royk,r.komfyrvakt, ...PANEL_ITEMS.map(p=>r["panel_"+p.id])].map(v => v == null ? "" : v));
 
   const csv = [cols, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
   const bom = "﻿";
@@ -1058,7 +1182,7 @@ async function redigerRom(navn) {
   if (document.getElementById("romKommentar")) document.getElementById("romKommentar").value = rom.kommentar || "";
 
   // Avkrysningsbokser og verdier
-  const feats = {kurs:rom.kurser,stikkenkel:rom.stikk_enkel,stikkdobbel:rom.stikk_dobbel,stikkfire:rom.stikk_fire,stikkseks:rom.stikk_seks,data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,termostat:rom.termostat,royk:rom.royk,komfyrvakt:rom.komfyrvakt,
+  const feats = {kurs:rom.kurser,stikkenkel:rom.stikk_enkel,stikkdobbel:rom.stikk_dobbel,stikkfire:rom.stikk_fire,stikkseks:rom.stikk_seks,data:rom.datauttak,down:rom.down,lamp:rom.lamp,spot:rom.spot,ledstrip:rom.ledstrip,vegg:rom.vegg,speil:rom.speil,montvgg:rom.montvgg,monttak:rom.monttak,montled:rom.montled,dimmer:rom.dimmer,lysbryter:rom.lysbryter,bryter:rom.bryter,vkabel:rom.vkabel,vfolie:rom.vfolie,lavkabel:rom.lavkabel,panel:rom.panel,termostat:rom.termostat,royk:rom.royk,komfyrvakt:rom.komfyrvakt,
     jordfeil:rom.panel_jordfeil,ov:rom.panel_ov,malerplass:rom.panel_malerplass,svakstrom:rom.panel_svakstrom,innfelt:rom.panel_innfelt,utenpa:rom.panel_utenpa,tks:rom.panel_tks,tilforsel:rom.panel_tilforsel};
   Object.entries(feats).forEach(([id, v]) => {
     const cb = document.getElementById("cb-"+id);
